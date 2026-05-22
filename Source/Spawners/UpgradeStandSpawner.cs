@@ -463,7 +463,7 @@ public static class UpgradeStandSpawner
 
     private static List<string> DisableMovableOverlaps(Vector3 position, Quaternion rotation)
     {
-        Vector3 halfExtents = new(0.85f, 1.10f, 0.55f);
+        Vector3 halfExtents = new(1.15f, 1.15f, 0.75f);
         Vector3 center = position + Vector3.up * halfExtents.y;
         Bounds standBounds = BuildWorldBounds(center, halfExtents, rotation, 0.03f);
         HashSet<Transform> disabledTargets = new();
@@ -480,7 +480,6 @@ public static class UpgradeStandSpawner
             if (!IsShopModulePath(path)) continue;
             if (IsProtected(col.transform)) continue;
             if (IsStructuralShopSurface(path)) continue;
-            if (path.Contains("/dependencies/")) continue;
 
             Transform disableTarget = FindDecorativeDisableRoot(col.transform);
             TryDisableDecorativeTarget(disableTarget, disabledTargets, disabledPaths, "collider");
@@ -501,7 +500,6 @@ public static class UpgradeStandSpawner
             if (IsProtected(rendererTransform)) continue;
             if (IsStructuralShopSurface(path)) continue;
             if (path.Contains("collider") || path.Contains("trigger")) continue;
-            if (path.Contains("/dependencies/")) continue;
 
             Transform disableTarget = FindDecorativeDisableRoot(rendererTransform);
             TryDisableDecorativeTarget(disableTarget, disabledTargets, disabledPaths, "renderer");
@@ -529,9 +527,6 @@ public static class UpgradeStandSpawner
 
         string targetPath = GetTransformPath(disableTarget).ToLowerInvariant();
         if (!IsShopModulePath(targetPath))
-            return false;
-
-        if (targetPath.Contains("/dependencies/"))
             return false;
 
         if (IsProtected(disableTarget))
@@ -596,6 +591,7 @@ public static class UpgradeStandSpawner
             if (parentName == "props" ||
                 parentName == "items" ||
                 parentName == "item stands" ||
+                parentName == "dependencies" ||
                 parentName == "not connected" ||
                 parentName == "connected" ||
                 parentName == "walls" ||

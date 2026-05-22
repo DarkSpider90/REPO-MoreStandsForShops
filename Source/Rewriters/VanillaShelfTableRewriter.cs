@@ -80,13 +80,14 @@ internal static class VanillaShelfTableRewriter
         {
             CreateVolumeSlot(
                 shelf,
-                $"{GeneratedPrefix} Small {i + 1:00}",
+                $"{GeneratedPrefix} Grenade {i + 1:00}",
                 SemiFunc.itemVolume.small,
-                LowerSmallSlotPositions[i]);
+                LowerSmallSlotPositions[i],
+                MoreStandsShelfZone.Grenade);
         }
 
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo($"[ShelfTableRewrite] Created {HealthSlotPositions.Length} healthPack upper slot(s) and {LowerSmallSlotPositions.Length} small lower slot(s) on {GetTransformPath(shelf)}.");
+            Plugin.Log.LogInfo($"[ShelfTableRewrite] Created {HealthSlotPositions.Length} healthPack upper slot(s) and {LowerSmallSlotPositions.Length} grenade lower slot(s) on {GetTransformPath(shelf)}.");
 
         return true;
     }
@@ -171,7 +172,7 @@ internal static class VanillaShelfTableRewriter
         return volume;
     }
 
-    private static ItemVolume CreateVolumeSlot(Transform parent, string name, SemiFunc.itemVolume itemVolume, Vector3 localPosition)
+    private static ItemVolume CreateVolumeSlot(Transform parent, string name, SemiFunc.itemVolume itemVolume, Vector3 localPosition, MoreStandsShelfZone? zone = null)
     {
         GameObject slot = new(name);
         slot.transform.SetParent(parent, false);
@@ -181,6 +182,13 @@ internal static class VanillaShelfTableRewriter
         ItemVolume volume = slot.AddComponent<ItemVolume>();
         volume.itemVolume = itemVolume;
         volume.itemSecretShopType = SemiFunc.itemSecretShopType.none;
+
+        if (zone.HasValue)
+        {
+            MoreStandsShelfVolume marker = slot.AddComponent<MoreStandsShelfVolume>();
+            marker.Zone = zone.Value;
+        }
+
         return volume;
     }
 

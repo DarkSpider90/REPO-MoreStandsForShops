@@ -41,7 +41,14 @@ internal static class ShelfItemSelector
 
     internal static int TargetFor(MoreStandsShelfZone zone)
     {
-        string key = zone == MoreStandsShelfZone.Drone ? "Drones" : "Power Crystals";
+        string key = zone switch
+        {
+            MoreStandsShelfZone.Drone => "Drones",
+            MoreStandsShelfZone.Crystal => "Power Crystals",
+            MoreStandsShelfZone.Grenade => "Grenades",
+            _ => string.Empty
+        };
+
         return Plugin.ItemCounts.TryGetValue(key, out var entry) ? entry.Value : 0;
     }
 
@@ -74,6 +81,7 @@ internal static class ShelfItemSelector
         {
             MoreStandsShelfZone.Drone => category == ShopStockCategory.Drones,
             MoreStandsShelfZone.Crystal => category == ShopStockCategory.PowerCrystals,
+            MoreStandsShelfZone.Grenade => category == ShopStockCategory.Grenades,
             _ => false
         };
     }
@@ -83,7 +91,14 @@ internal static class ShelfItemSelector
         if (zone == MoreStandsShelfZone.Crystal)
             return TargetFor(zone);
 
-        return Plugin.SameItemCopies.TryGetValue("Drones", out var entry) ? entry.Value : TargetFor(zone);
+        string key = zone switch
+        {
+            MoreStandsShelfZone.Drone => "Drones",
+            MoreStandsShelfZone.Grenade => "Grenades",
+            _ => string.Empty
+        };
+
+        return Plugin.SameItemCopies.TryGetValue(key, out var entry) ? entry.Value : TargetFor(zone);
     }
 
     private static int SameItemCount(MoreStandsShelfZone zone, Item item)

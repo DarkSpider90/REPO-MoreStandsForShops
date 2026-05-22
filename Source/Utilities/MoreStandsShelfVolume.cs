@@ -5,7 +5,8 @@ namespace MoreStandsForShops.Utilities;
 public enum MoreStandsShelfZone
 {
     Drone,
-    Crystal
+    Crystal,
+    Grenade
 }
 
 public sealed class MoreStandsShelfVolume : MonoBehaviour

@@ -59,7 +59,7 @@ internal static class ShelfSpawnController
         }
 
         ShopManager.instance.itemVolumes.RemoveAll(volume => volume == null || volume.GetComponent<MoreStandsShelfVolume>() != null);
-        Plugin.Log.LogInfo($"[ShelfSpawnController] Removed {shelfVolumes.Count} drone/crystal shelf ItemVolume(s) from vanilla population.");
+        Plugin.Log.LogInfo($"[ShelfSpawnController] Removed {shelfVolumes.Count} controlled shelf ItemVolume(s) from vanilla population.");
 
         foreach (ItemVolume volume in shelfVolumes)
         {
@@ -158,6 +158,7 @@ internal static class ShelfSpawnController
         {
             MoreStandsShelfZone.Drone => ReferenceEquals(itemList, ShopManager.instance.potentialItems),
             MoreStandsShelfZone.Crystal => ReferenceEquals(itemList, ShopManager.instance.potentialItemConsumables),
+            MoreStandsShelfZone.Grenade => ReferenceEquals(itemList, ShopManager.instance.potentialItems),
             _ => false
         };
     }

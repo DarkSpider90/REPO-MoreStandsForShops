@@ -11,8 +11,8 @@ internal static class ShopPoolPlanner
         if (shopManager == null)
             return;
 
-        RemoveDroneCrystalItemsFromVanillaPools(shopManager);
         TopUpPotentialPoolsFromStats(shopManager);
+        RemoveControlledShelfItemsFromVanillaPools(shopManager);
 
         shopManager.potentialItemUpgrades = FilterListByConfiguredLimits(shopManager.potentialItemUpgrades, "upgrades");
         shopManager.potentialItems = FilterListByConfiguredLimits(shopManager.potentialItems, "standard");
@@ -21,23 +21,23 @@ internal static class ShopPoolPlanner
     }
 
 
-    private static void RemoveDroneCrystalItemsFromVanillaPools(ShopManager shopManager)
+    private static void RemoveControlledShelfItemsFromVanillaPools(ShopManager shopManager)
     {
         if (shopManager == null)
             return;
 
         int removed = 0;
-        removed += RemoveDroneCrystalItems(shopManager.potentialItems);
-        removed += RemoveDroneCrystalItems(shopManager.potentialItemConsumables);
-        removed += RemoveDroneCrystalItems(shopManager.potentialItemUpgrades);
-        removed += RemoveDroneCrystalItems(shopManager.potentialItemHealthPacks);
+        removed += RemoveControlledShelfItems(shopManager.potentialItems);
+        removed += RemoveControlledShelfItems(shopManager.potentialItemConsumables);
+        removed += RemoveControlledShelfItems(shopManager.potentialItemUpgrades);
+        removed += RemoveControlledShelfItems(shopManager.potentialItemHealthPacks);
 
         if (removed > 0)
-            Plugin.Log.LogInfo($"[ShopPoolPlanner] Removed {removed} drone/crystal entries from vanilla pools; custom shelf handles them.");
+            Plugin.Log.LogInfo($"[ShopPoolPlanner] Removed {removed} controlled shelf entries from vanilla pools; custom shelf handling owns them.");
     }
 
 
-    private static int RemoveDroneCrystalItems(List<Item> items)
+    private static int RemoveControlledShelfItems(List<Item> items)
     {
         if (items == null)
             return 0;
@@ -46,7 +46,8 @@ internal static class ShopPoolPlanner
         items.RemoveAll(item =>
             item != null &&
             (item.itemType == SemiFunc.itemType.drone ||
-             item.itemType == SemiFunc.itemType.power_crystal));
+             item.itemType == SemiFunc.itemType.power_crystal ||
+             item.itemType == SemiFunc.itemType.grenade));
 
         return before - items.Count;
     }
@@ -72,7 +73,7 @@ internal static class ShopPoolPlanner
                 HasKeys = ShopStockCatalog.TryGetConfigKeys(item, out string countKey, out _),
                 CountKey = countKey
             })
-            .Where(entry => entry.HasKeys && GetCount(entry.CountKey) > 0)
+            .Where(entry => entry.HasKeys && !IsCustomShelfOnlyCountKey(entry.CountKey) && GetCount(entry.CountKey) > 0)
             .GroupBy(entry => entry.CountKey);
 
         foreach (var categoryGroup in candidatesByCountKey)
@@ -101,6 +102,12 @@ internal static class ShopPoolPlanner
             if (Plugin.DebugLogs.Value && added > 0)
                 Plugin.Log.LogInfo($"[ShopPoolPlanner] Topped up {countKey} pool: added={added}, before={current}, target={target}.");
         }
+    }
+
+
+    private static bool IsCustomShelfOnlyCountKey(string countKey)
+    {
+        return countKey == "Drones" || countKey == "Power Crystals" || countKey == "Grenades";
     }
 
 
