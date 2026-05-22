@@ -7,11 +7,6 @@ using UnityEngine.SceneManagement;
 
 namespace MoreStandsForShops.Spawners;
 
-/// <summary>
-/// Spawns a combined drone + crystal stand.
-/// Clones a vanilla "valuable shelf short (1)" (health shelf visual),
-/// places it at Candy Shelf 2 location, then reassigns ItemVolume zones.
-/// </summary>
 public static class DroneCrystalStandSpawner
 {
     private const string CosmeticModuleName = "Level Generator/Level/Module - Shop - S - Cosmetic Machine 01(Clone)";

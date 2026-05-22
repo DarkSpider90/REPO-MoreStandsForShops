@@ -7,27 +7,18 @@ using UnityEngine.SceneManagement;
 
 namespace MoreStandsForShops.Spawners;
 
-/// <summary>
-/// Spawns an additional Upgrade Stand clone.
-/// Finds the original using UpgradeStand component, not hardcoded paths.
-/// Uses CleanPresetDatabase for spawn points.
-/// </summary>
 public static class UpgradeStandSpawner
 {
     private static GameObject _cachedPrefab;
     private static bool _prefabPrepared;
 
-    /// <summary>
-    /// Prepare the passive visual prefab without mutating the current shop.
-    /// </summary>
+
     public static bool EnsurePrefabPrepared()
     {
         return _prefabPrepared || PreparePrefab();
     }
 
-    /// <summary>
-    /// Try to spawn an additional upgrade stand. Returns true on success.
-    /// </summary>
+
     public static bool TrySpawn(out GameObject spawnedStand, bool configureItemVolumes = true)
     {
         spawnedStand = null;
@@ -142,6 +133,7 @@ public static class UpgradeStandSpawner
         return false;
     }
 
+
     public static bool SpawnNetworkVisual(string spawnId, string variantId, Vector3 position, Quaternion rotation, string parentPath, string[] disabledPaths)
     {
         if (!EnsurePrefabPrepared())
@@ -167,6 +159,7 @@ public static class UpgradeStandSpawner
         return true;
     }
 
+
     private static GameObject FindExistingSpawnedStand()
     {
         return Resources.FindObjectsOfTypeAll<Transform>()
@@ -176,33 +169,39 @@ public static class UpgradeStandSpawner
             .FirstOrDefault();
     }
 
+
     private static void ConfigureUpgradeVolumes(GameObject spawnedStand)
     {
         int maxSlots = Plugin.ItemCounts.TryGetValue("Upgrades Per Stand", out var entry) ? entry.Value : 14;
-        ItemVolume[] volumes = spawnedStand.GetComponentsInChildren<ItemVolume>(true)
-            .Where(v => v != null)
-            .OrderByDescending(v => v.transform.position.y)
-            .ThenBy(v => v.transform.position.x)
-            .ToArray();
 
-        if (volumes.Length == 0)
+        ItemVolume[] volumes = GetStandItemVolumes(spawnedStand);
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[UpgradeStandSpawner] Clone child ItemVolume count before source copy: {volumes.Length}.");
+
+        if (volumes.Length < maxSlots && maxSlots > 0)
         {
-            CreateUpgradeVolumes(spawnedStand.transform, maxSlots);
-            volumes = spawnedStand.GetComponentsInChildren<ItemVolume>(true)
-                .Where(v => v != null)
-                .OrderByDescending(v => v.transform.position.y)
-                .ThenBy(v => v.transform.position.x)
-                .ToArray();
+            if (volumes.Length > 0)
+            {
+                DisableExistingUpgradeVolumeChildren(volumes);
+
+                if (Plugin.DebugLogs.Value)
+                    Plugin.Log.LogInfo($"[UpgradeStandSpawner] Disabled {volumes.Length} incomplete cloned upgrade ItemVolume(s) before vanilla source copy.");
+            }
+
+            // Old hand-built grid is intentionally not used anymore:
+            // CreateUpgradeVolumes(spawnedStand.transform, maxSlots);
+
+            volumes = CreateUpgradeVolumesFromVanillaSources(spawnedStand.transform);
         }
 
         for (int i = 0; i < volumes.Length; i++)
         {
             volumes[i].itemVolume = SemiFunc.itemVolume.upgrade;
             volumes[i].itemSecretShopType = SemiFunc.itemSecretShopType.none;
+
             if (volumes[i].gameObject.GetComponent<MoreStandsUpgradeVolume>() == null)
-            {
                 volumes[i].gameObject.AddComponent<MoreStandsUpgradeVolume>();
-            }
 
             bool enabled = i < maxSlots;
             volumes[i].gameObject.SetActive(enabled);
@@ -212,38 +211,205 @@ public static class UpgradeStandSpawner
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo($"[UpgradeStandSpawner] Configured upgrade ItemVolumes: active={System.Math.Min(maxSlots, volumes.Length)}, total={volumes.Length}.");
     }
-
-    private static void CreateUpgradeVolumes(Transform parent, int maxSlots)
+    
+    
+    private static ItemVolume[] GetStandItemVolumes(GameObject stand)
     {
-        float[] xs = EvenlySpaced(-0.78f, 0.78f, 7);
-        float[] ys = { 1.72f, 1.14f };
-        int created = 0;
-
-        foreach (float y in ys)
+        return stand.GetComponentsInChildren<ItemVolume>(true)
+            .Where(v => v != null)
+            .OrderByDescending(v => v.transform.localPosition.y)
+            .ThenBy(v => v.transform.localPosition.x)
+            .ToArray();
+    }
+    
+    
+    private static void DisableExistingUpgradeVolumeChildren(ItemVolume[] volumes)
+    {
+        foreach (ItemVolume volume in volumes)
         {
-            foreach (float x in xs)
+            if (volume == null)
+                continue;
+
+            volume.enabled = false;
+            volume.gameObject.SetActive(false);
+        }
+    }
+
+
+    private static ItemVolume[] CreateUpgradeVolumesFromVanillaSources(Transform targetStand)
+    {
+        UpgradeStand originalStand = FindOriginalUpgradeStand();
+        if (originalStand == null)
+        {
+            Plugin.Log.LogWarning("[UpgradeStandSpawner] Cannot copy upgrade ItemVolumes: vanilla UpgradeStand not found.");
+            return new ItemVolume[0];
+        }
+
+        List<UpgradeVolumeSource> allUpgradeSources = FindAllVanillaUpgradeVolumeSources(originalStand.transform)
+            .ToList();
+
+        List<UpgradeVolumeSource> sources = allUpgradeSources
+            .Where(IsLikelyOriginalUpgradeSlot)
+            .OrderByDescending(s => s.LocalPosition.y)
+            .ThenBy(s => s.LocalPosition.x)
+            .Take(14)
+            .ToList();
+
+        if (Plugin.DebugLogs.Value)
+        {
+            Plugin.Log.LogInfo($"[UpgradeStandSpawner] Vanilla upgrade slot scan: all={allUpgradeSources.Count}, accepted={sources.Count}, original={GetTransformPath(originalStand.transform)}.");
+
+            foreach (UpgradeVolumeSource source in allUpgradeSources.OrderBy(s => s.Distance).Take(24))
             {
-                if (created >= maxSlots)
-                {
-                    Plugin.Log.LogInfo($"[UpgradeStandSpawner] Created {created} passive upgrade ItemVolume(s).");
-                    return;
-                }
-
-                GameObject slot = new($"MoreStandsForShops Upgrade Slot {created + 1:00}");
-                slot.transform.SetParent(parent, false);
-                slot.transform.localPosition = new Vector3(x, y, 0.28f);
-                slot.transform.localRotation = Quaternion.identity;
-
-                ItemVolume volume = slot.AddComponent<ItemVolume>();
-                volume.itemVolume = SemiFunc.itemVolume.upgrade;
-                volume.itemSecretShopType = SemiFunc.itemSecretShopType.none;
-                slot.AddComponent<MoreStandsUpgradeVolume>();
-                created++;
+                bool accepted = IsLikelyOriginalUpgradeSlot(source);
+                Plugin.Log.LogInfo($"[UpgradeStandSpawner] Vanilla upgrade slot candidate: accepted={accepted}, distance={source.Distance:F2}, local={source.LocalPosition}, path={source.Path}");
             }
         }
 
-        Plugin.Log.LogInfo($"[UpgradeStandSpawner] Created {created} passive upgrade ItemVolume(s).");
+        if (sources.Count == 0)
+        {
+            Plugin.Log.LogWarning("[UpgradeStandSpawner] Cannot copy upgrade ItemVolumes: no nearby vanilla upgrade ItemVolumes found.");
+            return new ItemVolume[0];
+        }
+        
+        if (sources.Count < 14)
+        {
+            Plugin.Log.LogWarning($"[UpgradeStandSpawner] Only {sources.Count}/14 vanilla upgrade ItemVolume(s) accepted. Passive stand may have fewer upgrade slots.");
+        }
+
+        List<ItemVolume> created = new();
+
+        for (int i = 0; i < sources.Count; i++)
+        {
+            UpgradeVolumeSource source = sources[i];
+
+            GameObject slot = Object.Instantiate(source.Volume.gameObject, targetStand, false);
+            slot.name = $"MoreStandsForShops Upgrade Slot {i + 1:00}";
+            slot.transform.localPosition = source.LocalPosition;
+            slot.transform.localRotation = source.LocalRotation;
+            slot.transform.localScale = source.LocalScale;
+            slot.SetActive(true);
+
+            ItemVolume volume = slot.GetComponent<ItemVolume>();
+            if (volume == null)
+                volume = slot.AddComponent<ItemVolume>();
+
+            volume.itemVolume = SemiFunc.itemVolume.upgrade;
+            volume.itemSecretShopType = SemiFunc.itemSecretShopType.none;
+            volume.enabled = true;
+
+            if (slot.GetComponent<MoreStandsUpgradeVolume>() == null)
+                slot.AddComponent<MoreStandsUpgradeVolume>();
+
+            created.Add(volume);
+
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[UpgradeStandSpawner] Copied vanilla upgrade slot {i + 1}: source={source.Path}, local={source.LocalPosition}, yaw={source.LocalRotation.eulerAngles.y:F1}");
+        }
+
+        Plugin.Log.LogInfo($"[UpgradeStandSpawner] Copied {created.Count} vanilla upgrade ItemVolume(s) for passive stand.");
+        return created
+            .OrderByDescending(v => v.transform.localPosition.y)
+            .ThenBy(v => v.transform.localPosition.x)
+            .ToArray();
     }
+
+
+    private static IEnumerable<UpgradeVolumeSource> FindAllVanillaUpgradeVolumeSources(Transform originalStand)
+    {
+        return Resources.FindObjectsOfTypeAll<ItemVolume>()
+            .Where(v => v != null)
+            .Where(v => v.gameObject.activeInHierarchy)
+            .Where(v => v.itemVolume == SemiFunc.itemVolume.upgrade)
+            .Where(v => !IsInsideModOwnedObject(v.transform))
+            .Select(v => new UpgradeVolumeSource(v, originalStand));
+    }
+
+
+    private static bool IsLikelyOriginalUpgradeSlot(UpgradeVolumeSource source)
+    {
+        Vector3 local = source.LocalPosition;
+
+        return source.Distance <= 2.5f &&
+               Mathf.Abs(local.x) <= 1.6f &&
+               local.y >= 0.4f &&
+               local.y <= 2.5f &&
+               local.z >= -1.2f &&
+               local.z <= 1.4f;
+    }
+
+
+    private static bool IsInsideModOwnedObject(Transform transform)
+    {
+        Transform current = transform;
+        while (current != null)
+        {
+            if (current.name.StartsWith("MoreStandsForShops", System.StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (current.name.StartsWith("ExtraItemsShop", System.StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+
+    private sealed class UpgradeVolumeSource
+    {
+        internal readonly ItemVolume Volume;
+        internal readonly Vector3 LocalPosition;
+        internal readonly Quaternion LocalRotation;
+        internal readonly Vector3 LocalScale;
+        internal readonly float Distance;
+        internal readonly string Path;
+
+        internal UpgradeVolumeSource(ItemVolume volume, Transform originalStand)
+        {
+            Volume = volume;
+            LocalPosition = originalStand.InverseTransformPoint(volume.transform.position);
+            LocalRotation = Quaternion.Inverse(originalStand.rotation) * volume.transform.rotation;
+            LocalScale = volume.transform.localScale;
+            Distance = Vector3.Distance(originalStand.position, volume.transform.position);
+            Path = GetTransformPath(volume.transform);
+        }
+    }
+
+
+    // private static void CreateUpgradeVolumes(Transform parent, int maxSlots)
+    // {
+    //     float[] xs = EvenlySpaced(-0.78f, 0.78f, 7);
+    //     float[] ys = { 1.72f, 1.14f };
+    //     int created = 0;
+    //
+    //     foreach (float y in ys)
+    //     {
+    //         foreach (float x in xs)
+    //         {
+    //             if (created >= maxSlots)
+    //             {
+    //                 Plugin.Log.LogInfo($"[UpgradeStandSpawner] Created {created} passive upgrade ItemVolume(s).");
+    //                 return;
+    //             }
+    //
+    //             GameObject slot = new($"MoreStandsForShops Upgrade Slot {created + 1:00}");
+    //             slot.transform.SetParent(parent, false);
+    //             slot.transform.localPosition = new Vector3(x, y, 0.28f);
+    //             slot.transform.localRotation = Quaternion.identity;
+    //
+    //             ItemVolume volume = slot.AddComponent<ItemVolume>();
+    //             volume.itemVolume = SemiFunc.itemVolume.upgrade;
+    //             volume.itemSecretShopType = SemiFunc.itemSecretShopType.none;
+    //             slot.AddComponent<MoreStandsUpgradeVolume>();
+    //             created++;
+    //         }
+    //     }
+    //
+    //     Plugin.Log.LogInfo($"[UpgradeStandSpawner] Created {created} passive upgrade ItemVolume(s).");
+    // } todo remove
+
 
     private static float[] EvenlySpaced(float min, float max, int count)
     {
@@ -261,6 +427,7 @@ public static class UpgradeStandSpawner
         return values;
     }
 
+
     private static bool PreparePrefab()
     {
         // Find original upgrade stand via component
@@ -276,9 +443,18 @@ public static class UpgradeStandSpawner
         _cachedPrefab.SetActive(false);
         Object.DontDestroyOnLoad(_cachedPrefab);
 
-        // Remove UpgradeStand and PhotonView
+        // Keep vanilla visual, but replace vanilla UpgradeStand logic with our safe controller.
         var standComp = _cachedPrefab.GetComponent<UpgradeStand>();
-        if (standComp != null) Object.Destroy(standComp);
+        if (standComp != null)
+        {
+            var rerollController = _cachedPrefab.GetComponent<UpgradeStandRerollController>();
+            if (rerollController == null)
+                rerollController = _cachedPrefab.AddComponent<UpgradeStandRerollController>();
+
+            rerollController.ConfigureFromVanilla(standComp);
+            Object.Destroy(standComp);
+        }
+
         var pv = _cachedPrefab.GetComponent<Photon.Pun.PhotonView>();
         if (pv != null) Object.Destroy(pv);
 
@@ -286,6 +462,7 @@ public static class UpgradeStandSpawner
         Plugin.Log.LogInfo("[UpgradeStandSpawner] Upgrade stand prefab prepared.");
         return true;
     }
+
 
     private static void DisableItemVolumes(GameObject stand)
     {
@@ -307,6 +484,7 @@ public static class UpgradeStandSpawner
                                  !s.name.StartsWith("ExtraItemsShop", System.StringComparison.OrdinalIgnoreCase));
     }
 
+
     private static bool IsModulePresent(string moduleName)
     {
         return Resources.FindObjectsOfTypeAll<Transform>()
@@ -327,6 +505,7 @@ public static class UpgradeStandSpawner
                        name.Contains("module - shop - de - solo wheel");
             });
     }
+
 
     private static bool IsAgainstWall(Vector3 position, Quaternion rotation)
     {
@@ -351,6 +530,7 @@ public static class UpgradeStandSpawner
         }
         return false;
     }
+
 
     private static bool HasProtectedOverlap(Vector3 position, Quaternion rotation, out string objectName)
     {
@@ -410,6 +590,7 @@ public static class UpgradeStandSpawner
         return false;
     }
 
+
     private static bool IsProtected(Transform t)
     {
         string path = GetTransformPath(t).ToLowerInvariant();
@@ -432,6 +613,7 @@ public static class UpgradeStandSpawner
 
         return false;
     }
+
 
     private static bool IsStructuralShopSurface(string path)
     {
@@ -456,10 +638,12 @@ public static class UpgradeStandSpawner
                leaf.Contains("wall");
     }
 
+
     private static bool IsShopModulePath(string path)
     {
         return path.Contains("level generator/level/module - shop");
     }
+
 
     private static List<string> DisableMovableOverlaps(Vector3 position, Quaternion rotation)
     {
@@ -508,6 +692,7 @@ public static class UpgradeStandSpawner
         return disabledPaths;
     }
 
+
     private static bool TryDisableDecorativeTarget(Transform disableTarget, HashSet<Transform> disabledTargets, List<string> disabledPaths, string reason)
     {
         if (disableTarget == null)
@@ -545,6 +730,7 @@ public static class UpgradeStandSpawner
         return true;
     }
 
+
     private static bool IsUnsafeDisableRoot(Transform transform)
     {
         string name = transform.name.ToLowerInvariant();
@@ -567,6 +753,7 @@ public static class UpgradeStandSpawner
                name == "level generator";
     }
 
+
     private static Bounds BuildWorldBounds(Vector3 center, Vector3 localHalfExtents, Quaternion rotation, float padding)
     {
         Vector3 right = rotation * Vector3.right;
@@ -581,6 +768,7 @@ public static class UpgradeStandSpawner
         worldHalfExtents += Vector3.one * padding;
         return new Bounds(center, worldHalfExtents * 2f);
     }
+
 
     private static Transform FindDecorativeDisableRoot(Transform transform)
     {
@@ -606,6 +794,7 @@ public static class UpgradeStandSpawner
 
         return transform;
     }
+
 
     private static Transform FindTransformByPath(string path)
     {
