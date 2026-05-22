@@ -1,0 +1,36 @@
+namespace MoreStandsForShops.Shop;
+
+internal static class ShopItemLimitPlanner
+{
+    internal static void ApplyConfiguredItemLimits()
+    {
+        var itemDict = StatsManager.instance?.itemDictionary;
+        if (itemDict == null)
+            return;
+
+        Plugin.EnsureItemSpawnChanceConfigs(itemDict.Values);
+
+        foreach (var item in itemDict.Values)
+        {
+            if (item == null)
+                continue;
+
+            if (!ShopStockCatalog.TryGetConfigKeys(item, out string countKey, out _))
+                continue;
+
+            if (!Plugin.ItemCounts.TryGetValue(countKey, out var countEntry))
+                continue;
+
+            int newMax = countEntry.Value;
+            item.maxAmountInShop = newMax;
+            item.maxAmount = newMax;
+            item.maxPurchase = newMax > 0;
+            item.maxPurchaseAmount = newMax;
+
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[ShopItemLimitPlanner] Set {item.itemName} maxAmountInShop to {newMax}");
+        }
+
+        Plugin.Log.LogInfo("[ShopItemLimitPlanner] Applied item count overrides.");
+    }
+}

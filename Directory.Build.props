@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Adjust these paths to match your setup -->
+    <GameManagedPath>..\GameAssets\Managed</GameManagedPath>
+  </PropertyGroup>
+</Project>
