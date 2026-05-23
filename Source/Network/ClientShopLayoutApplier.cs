@@ -25,13 +25,9 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
             _instance = host.AddComponent<ClientShopLayoutApplier>();
         }
 
-        if (!ShopLayoutSync.IsReady())
-        {
-            _lastAppliedSequence = 0;
-        }
-
         _instance.StartCoroutine(_instance.ApplyRoutine());
     }
+    
 
     private IEnumerator ApplyRoutine()
     {
@@ -39,15 +35,16 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
         for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
-            if (ShopLayoutSync.IsReady())
-            {
-                int sequence = ShopLayoutSync.GetSequence();
-                if (sequence == _lastAppliedSequence)
-                {
-                    _isApplying = false;
-                    yield break;
-                }
+            bool ready = ShopLayoutSync.IsReady();
+            int sequence = ShopLayoutSync.GetSequence();
 
+            if (Plugin.DebugLogs.Value)
+            {
+                Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Waiting layout: attempt={attempt}/{MaxAttempts}, ready={ready}, sequence={sequence}, lastApplied={_lastAppliedSequence}.");
+            }
+
+            if (ready && sequence != _lastAppliedSequence)
+            {
                 ApplyNow(sequence);
                 _isApplying = false;
                 yield break;
@@ -57,8 +54,9 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
         }
 
         _isApplying = false;
-        Plugin.Log.LogWarning("[ClientShopLayoutApplier] Host shop layout did not become ready in time.");
+        Plugin.Log.LogWarning($"[ClientShopLayoutApplier] Host shop layout did not become ready with a new sequence in time. lastApplied={_lastAppliedSequence}, current={ShopLayoutSync.GetSequence()}, ready={ShopLayoutSync.IsReady()}.");
     }
+    
 
     private static void ApplyNow(int sequence)
     {

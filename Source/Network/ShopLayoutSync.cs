@@ -48,6 +48,8 @@ internal static class ShopLayoutSync
         };
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        
+        Plugin.Log.LogInfo($"[ShopLayoutSync] Cleared shop layout. sequence={ReadInt(props, LayoutSequenceKey)}.");
     }
 
 
@@ -56,13 +58,17 @@ internal static class ShopLayoutSync
         if (!CanWrite())
             return;
 
+        int sequence = NextSequence();
+
         var props = new Hashtable
         {
             { LayoutReadyKey, true },
-            { LayoutSequenceKey, NextSequence() }
+            { LayoutSequenceKey, sequence }
         };
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+
+        Plugin.Log.LogInfo($"[ShopLayoutSync] Marked shop layout ready. sequence={sequence}.");
     }
 
 
@@ -83,6 +89,8 @@ internal static class ShopLayoutSync
         };
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        
+        Plugin.Log.LogInfo($"[ShopLayoutSync] Stored upgrade stand layout: enabled={layout.Enabled}, variant={layout.VariantId}, slots={layout.UpgradeSlotCount}, disabledPaths={layout.DisabledPaths?.Length ?? 0}.");
     }
 
 
@@ -128,6 +136,8 @@ internal static class ShopLayoutSync
         };
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        
+        Plugin.Log.LogInfo($"[ShopLayoutSync] Stored drone/crystal shelf layout: enabled={layout.Enabled}, droneSlots={layout.DroneSlotCount}, crystalSlots={layout.CrystalSlotCount}, disabledPaths={layout.DisabledPaths?.Length ?? 0}.");
     }
 
 
