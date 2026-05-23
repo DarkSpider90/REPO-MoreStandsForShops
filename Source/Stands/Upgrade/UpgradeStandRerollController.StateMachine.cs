@@ -444,11 +444,9 @@ internal sealed partial class UpgradeStandRerollController
             
             if (maxRerollCount > 0 && rerollCount >= maxRerollCount)
             {
-                buildUpActive = true;
-                buildUpTimer = 0f;
-
-                if (!SemiFunc.Photosensitivity() && buildUpParticles != null)
-                    buildUpParticles.Play(true);
+                StartBreakBuildUpVisual();
+                if (SemiFunc.IsMultiplayer() && PhotonNetwork.IsMasterClient)
+                    BroadcastBreakBuildUpVisual();
             }
             
             stateStart = false;

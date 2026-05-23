@@ -379,39 +379,6 @@ public static class UpgradeStandSpawner
     }
 
 
-    // private static void CreateUpgradeVolumes(Transform parent, int maxSlots)
-    // {
-    //     float[] xs = EvenlySpaced(-0.78f, 0.78f, 7);
-    //     float[] ys = { 1.72f, 1.14f };
-    //     int created = 0;
-    //
-    //     foreach (float y in ys)
-    //     {
-    //         foreach (float x in xs)
-    //         {
-    //             if (created >= maxSlots)
-    //             {
-    //                 Plugin.Log.LogInfo($"[UpgradeStandSpawner] Created {created} passive upgrade ItemVolume(s).");
-    //                 return;
-    //             }
-    //
-    //             GameObject slot = new($"MoreStandsForShops Upgrade Slot {created + 1:00}");
-    //             slot.transform.SetParent(parent, false);
-    //             slot.transform.localPosition = new Vector3(x, y, 0.28f);
-    //             slot.transform.localRotation = Quaternion.identity;
-    //
-    //             ItemVolume volume = slot.AddComponent<ItemVolume>();
-    //             volume.itemVolume = SemiFunc.itemVolume.upgrade;
-    //             volume.itemSecretShopType = SemiFunc.itemSecretShopType.none;
-    //             slot.AddComponent<MoreStandsUpgradeVolume>();
-    //             created++;
-    //         }
-    //     }
-    //
-    //     Plugin.Log.LogInfo($"[UpgradeStandSpawner] Created {created} passive upgrade ItemVolume(s).");
-    // } todo remove
-
-
     private static float[] EvenlySpaced(float min, float max, int count)
     {
         if (count <= 1)

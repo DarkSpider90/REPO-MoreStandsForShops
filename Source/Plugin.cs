@@ -137,6 +137,7 @@ public class Plugin : BaseUnityPlugin
         ItemCounts["Mines"] = Config.Bind(ic, "Mines", 2, new ConfigDescription("Mines (0-3).", new AcceptableValueRange<int>(0, 3)));
         ItemCounts["Melee"] = Config.Bind(ic, "Melee", 4, new ConfigDescription("Melee weapons (0-6).", new AcceptableValueRange<int>(0, 6)));
         ItemCounts["Guns"] = Config.Bind(ic, "Guns", 4, new ConfigDescription("Guns (0-6).", new AcceptableValueRange<int>(0, 6)));
+        ItemCounts["C.A.R.T. Cannon"] = Config.Bind(ic, "C.A.R.T. Cannon", 1, new ConfigDescription("C.A.R.T. Cannon items (0-4).", new AcceptableValueRange<int>(0, 4)));
         ItemCounts["Launchers"] = Config.Bind(ic, "Launchers (Staff)", 2, new ConfigDescription("Launchers/staffs (0-6).", new AcceptableValueRange<int>(0, 6)));
         ItemCounts["Tools"] = Config.Bind(ic, "Tools", 2, new ConfigDescription("Tools (0-4).", new AcceptableValueRange<int>(0, 4)));
         ItemCounts["Health Packs"] = Config.Bind(ic, "Health Packs", 3, new ConfigDescription("Health packs (0-5).", new AcceptableValueRange<int>(0, 5)));

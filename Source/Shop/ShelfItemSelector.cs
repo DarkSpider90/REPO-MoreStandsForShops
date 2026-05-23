@@ -24,6 +24,7 @@ internal static class ShelfItemSelector
         return StatsManager.instance.itemDictionary.Values
             .Where(item => item != null && !item.disabled)
             .Where(item => IsZoneItem(item, zone))
+            .Where(item => !IsBlockedShelfItem(item, zone))
             .Where(item => item.itemVolume == slotVolume)
             .Where(item => Plugin.GetItemSpawnChance(item) > 0)
             .Where(item => SameItemCount(zone, item) < SameCopyLimit(zone))
@@ -84,6 +85,23 @@ internal static class ShelfItemSelector
             MoreStandsShelfZone.Grenade => category == ShopStockCategory.Grenades,
             _ => false
         };
+    }
+
+    private static bool IsBlockedShelfItem(Item item, MoreStandsShelfZone zone)
+    {
+        if (zone != MoreStandsShelfZone.Grenade)
+            return false;
+
+        return IsDuctTapedGrenade(item.name) || IsDuctTapedGrenade(ItemName(item));
+    }
+
+    private static bool IsDuctTapedGrenade(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        string lowered = name.ToLowerInvariant();
+        return lowered.Contains("duct") && lowered.Contains("tape") && lowered.Contains("grenade");
     }
 
     private static int SameCopyLimit(MoreStandsShelfZone zone)

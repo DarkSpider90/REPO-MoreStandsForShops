@@ -5,6 +5,11 @@ namespace MoreStandsForShops.Shop;
 
 internal static class ShopStockCatalog
 {
+    private static readonly Dictionary<string, (string countKey, string copyKey)> ExactItemConfigKeys = new()
+    {
+        { "C.A.R.T. Cannon", ("C.A.R.T. Cannon", null) }
+    };
+
     internal static IReadOnlyList<string> StandardBudgetCountKeys { get; } = new[]
     {
         "Orbs",
@@ -12,6 +17,7 @@ internal static class ShopStockCatalog
         "Mines",
         "Melee",
         "Guns",
+        "C.A.R.T. Cannon",
         "Launchers",
         "Tools",
         "Carts",
@@ -51,7 +57,35 @@ internal static class ShopStockCatalog
 
     internal static bool TryGetConfigKeys(Item item, out string countKey, out string copyKey)
     {
+        if (TryGetExactItemConfigKeys(item, out countKey, out copyKey))
+            return true;
+
         return TryGetConfigKeys(GetCategory(item), out countKey, out copyKey);
+    }
+
+    private static bool TryGetExactItemConfigKeys(Item item, out string countKey, out string copyKey)
+    {
+        countKey = null;
+        copyKey = null;
+
+        if (item == null)
+            return false;
+
+        return TryGetExactItemConfigKeys(item.itemName, out countKey, out copyKey) ||
+               TryGetExactItemConfigKeys(item.name, out countKey, out copyKey);
+    }
+
+    private static bool TryGetExactItemConfigKeys(string itemName, out string countKey, out string copyKey)
+    {
+        countKey = null;
+        copyKey = null;
+
+        if (string.IsNullOrWhiteSpace(itemName) || !ExactItemConfigKeys.TryGetValue(itemName, out var keys))
+            return false;
+
+        countKey = keys.countKey;
+        copyKey = keys.copyKey;
+        return true;
     }
 
     internal static bool TryGetConfigKeys(ShopStockCategory category, out string countKey, out string copyKey)

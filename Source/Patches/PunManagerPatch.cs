@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using MoreStandsForShops.Utilities;
 
 namespace MoreStandsForShops.Patches;
 
@@ -39,7 +40,10 @@ internal static class PunManagerPatch
             return false;
         }
 
+        LogTableMultiSizeSpawnCandidate(itemVolume, itemList);
+
         return true;
+        
     }
 
 
@@ -54,4 +58,53 @@ internal static class PunManagerPatch
 
         ShopSpawnFlow.NoteSpawnShopItemResult(itemVolume, __result);
     }
+    
+    private static void LogTableMultiSizeSpawnCandidate(ItemVolume itemVolume, List<Item> itemList)
+    {
+        if (!Plugin.DebugLogs.Value || itemVolume == null || itemList == null)
+            return;
+
+        MoreStandsMultiSizeVolume marker = itemVolume.GetComponent<MoreStandsMultiSizeVolume>();
+        if (marker == null || string.IsNullOrEmpty(marker.GroupId))
+            return;
+
+        Item selected = PredictVanillaSelectedItem(itemVolume, itemList);
+        if (selected == null)
+        {
+            Plugin.Log.LogInfo(
+                $"[MultiSizeSlot] Vanilla candidate missing: group={marker.GroupId}, " +
+                $"slotVolume={itemVolume.itemVolume}, local={itemVolume.transform.localPosition}, " +
+                $"world={itemVolume.transform.position}.");
+            return;
+        }
+
+        Plugin.Log.LogInfo(
+            $"[MultiSizeSlot] Vanilla candidate: group={marker.GroupId}, " +
+            $"slotVolume={itemVolume.itemVolume}, item={ItemName(selected)}, " +
+            $"itemVolume={selected.itemVolume}, local={itemVolume.transform.localPosition}, " +
+            $"world={itemVolume.transform.position}, yaw={itemVolume.transform.eulerAngles.y:F1}.");
+    }
+    
+
+    private static Item PredictVanillaSelectedItem(ItemVolume itemVolume, List<Item> itemList)
+    {
+        for (int i = itemList.Count - 1; i >= 0; i--)
+        {
+            Item item = itemList[i];
+            if (item != null && item.itemVolume == itemVolume.itemVolume)
+                return item;
+        }
+
+        return null;
+    }
+    
+
+    private static string ItemName(Item item)
+    {
+        if (item == null)
+            return "<null>";
+
+        return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
+    }
+    
 }

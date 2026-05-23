@@ -74,6 +74,14 @@ internal sealed partial class UpgradeStandRerollController
             return;
         }
 
+        if (photonEvent.Code == BreakBuildUpVisualEvent)
+        {
+            if (!PhotonNetwork.IsMasterClient)
+                StartBreakBuildUpVisual();
+
+            return;
+        }
+
         if (photonEvent.Code == BrokenVisualEvent && !PhotonNetwork.IsMasterClient)
             BreakButton();
     }
@@ -306,6 +314,22 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast broken visual.");
+    }
+
+
+    private void BroadcastBreakBuildUpVisual()
+    {
+        if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
+            return;
+
+        PhotonNetwork.RaiseEvent(
+            BreakBuildUpVisualEvent,
+            new object[0],
+            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
+            SendOptions.SendReliable);
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast break build-up visual.");
     }
     
     

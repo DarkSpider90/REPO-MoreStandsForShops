@@ -368,3 +368,5 @@ FodyWeavers.xsd
 Directory.Build.props
 
 build.bat
+
+dist

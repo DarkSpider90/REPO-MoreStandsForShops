@@ -299,6 +299,22 @@ internal sealed partial class UpgradeStandRerollController
         if (buildUpParticles != null)
             buildUpParticles.Stop(true);
     }
+
+
+    private void StartBreakBuildUpVisual()
+    {
+        if (isBroken)
+            return;
+
+        buildUpActive = true;
+        buildUpTimer = 0f;
+
+        if (!SemiFunc.Photosensitivity() && buildUpParticles != null)
+            buildUpParticles.Play(true);
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo("[UpgradeStandReroll.Visuals] Break build-up visual started.");
+    }
     
 
     private void UpdateBuildUpLoop()
@@ -428,6 +444,10 @@ internal sealed partial class UpgradeStandRerollController
         if (soundButtonBreak != null)
             soundButtonBreak.Play(ButtonSoundPosition);
         
+        buildUpActive = false;
+        if (soundBuildUpLoop != null)
+            soundBuildUpLoop.Stop();
+
         if (buttonRenderer != null)
             buttonRenderer.enabled = false;
         

@@ -70,3 +70,7 @@ Install with a Thunderstore-compatible mod manager.
 ## Credits
 
 Special thanks to Jettcodey and other R.E.P.O. modders whose earlier shop-related mods helped inspire experimentation with custom stand systems and multiplayer shop layouts.
+
+## License
+
+MIT. See `LICENSE`.
