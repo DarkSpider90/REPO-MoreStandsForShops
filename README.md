@@ -7,13 +7,9 @@ I made it for games where the shop starts to feel too small once you play with f
 ## What It Adds
 
 - A second upgrade stand.
-- A separate stand for drones and power crystals.
-- A better use for the vanilla health shelf, with health packs on top and grenades below.
-- More useful table spots for weapons, tools, staffs, and other larger shop items.
-- Settings for how many items can appear.
-- Settings for how many copies of the same item can appear.
-- Settings for item spawn chances, so you can make some items common, rare, or disabled.
-- Multiplayer support, so the shop layout and custom stands are shared properly with the lobby.
+- A dedicated shelf for drones and power crystals.
+- Reworked use of the vanilla health shelf, with health packs on top and grenades below.
+- Additional spawn space for weapons, tools, staffs, and other large shop items.
 
 The goal is not to turn the shop into chaos. The goal is to give the game more room to breathe.
 
@@ -27,8 +23,8 @@ This section controls the big switches.
 
 - Enable or disable the whole mod.
 - Enable or disable the extra upgrade stand.
-- Enable or disable the shelf and table changes.
-- Enable or disable the shop pool override.
+- Enable or disable additional shelves and table layout changes.
+- Enable or disable custom item pool changes.
 - Enable debug logs if you want to check what the mod is doing.
 
 ### Item Counts
@@ -62,17 +58,17 @@ Every item can have its own chance weight.
 
 This is useful if you like the item pool overall, but want to tune the mood of your shop.
 
+Spawn weights are relative within the same item category.
+
 ## Multiplayer
 
-For the smoothest experience, everyone in the lobby should use the same mod version and similar config.
+For the best multiplayer experience, everyone in the lobby should use the same mod version and preferably similar config settings.
 
-The host decides the shop layout and the other players follow that layout.
+The host controls the shop layout and synchronized item pools.
 
 ## Notes
 
 This mod tries to stay close to the normal shop feeling. Items should still feel like they belong in the shop, just with more space and better organization.
-
-If something looks strange, enable debug logs and check the latest game log. That usually makes it much easier to see what happened.
 
 ## Credits / Inspirations
 
