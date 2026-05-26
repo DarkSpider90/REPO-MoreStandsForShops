@@ -19,7 +19,7 @@ The goal is not to turn the shop into chaos. The goal is to give the game more r
 
 A dedicated shelf for drones and power crystals, separated from the normal shop tables for cleaner organization and easier access.
 
-![Drone And Crystal Shelf](https://raw.githubusercontent.com/DarkSpider90/REPO-MoreStandsForShops/main/images/StandDronesAndKrystals.png)
+![Drone And Crystal Shelf](https://raw.githubusercontent.com/DarkSpider90/REPO-MoreStandsForShops/main/images/StandDronesAndCrystals.png)
 
 ---
 
