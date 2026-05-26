@@ -13,6 +13,32 @@ I made it for games where the shop starts to feel too small once you play with f
 
 The goal is not to turn the shop into chaos. The goal is to give the game more room to breathe.
 
+## Showcase
+
+### Drone and Power Crystal Shelf
+
+A dedicated shelf for drones and power crystals, separated from the normal shop tables for cleaner organization and easier access.
+
+![Drone And Crystal Shelf](https://raw.githubusercontent.com/DarkSpider90/REPO-MoreStandsForShops/main/images/StandDronesAndKrystals.png)
+
+---
+
+### Medkits and Grenades Shelf
+
+The vanilla health shelf is repurposed to better organize support and throwable items.
+
+Health packs appear on the upper shelf, while grenades are placed below.
+
+![Medkits And Grenades Shelf](https://raw.githubusercontent.com/DarkSpider90/REPO-MoreStandsForShops/main/images/StandMedkitsAndGrenades.png)
+
+---
+
+### Extra Upgrade Stands
+
+Additional upgrade stands give upgrades more room to appear, especially in larger lobbies or heavily modded runs.
+
+![Extra Upgrade Stands](https://raw.githubusercontent.com/DarkSpider90/REPO-MoreStandsForShops/main/images/StandsForUpgrades.png)
+
 ## Settings
 
 The config is created after launching the game once with the mod installed.
