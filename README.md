@@ -1,72 +1,79 @@
 # MoreStandsForShops
 
-MoreStandsForShops adds new shelves and stands to the R.E.P.O. shop.
+MoreStandsForShops makes the R.E.P.O. shop feel fuller, cleaner, and a little more useful between runs.
 
-It also changes vanilla item spawn points, making them more flexible so different kinds of shop items can use them.
+I made it for games where the shop starts to feel too small once you play with friends, extra money, extra items, or a bigger mod list. Instead of leaving everything fighting for the same few table spots, the mod adds more proper places for items to appear.
 
-## Features
+## What It Adds
 
-- Passive second upgrade stand with curated preset placement.
-- Dedicated drone and power crystal stand.
-- Drones and power crystals are kept on the custom stand instead of vanilla tables.
-- Vanilla health shelf rewrite for health packs and small items.
-- Multi-size table slot support for medium, large, and large_high items.
-- Configurable item counts by category.
-- Configurable same-item copy limits.
-- Per-item spawn chance weights.
-- Optional shop pool limit override so extra slots keep trying to fill.
-- Multiplayer-oriented host/client placement synchronization.
-- Compatibility handling for custom gambling-style shop module layouts.
+- A second upgrade stand.
+- A separate stand for drones and power crystals.
+- A better use for the vanilla health shelf, with health packs on top and grenades below.
+- More useful table spots for weapons, tools, staffs, and other larger shop items.
+- Settings for how many items can appear.
+- Settings for how many copies of the same item can appear.
+- Settings for item spawn chances, so you can make some items common, rare, or disabled.
+- Multiplayer support, so the shop layout and custom stands are shared properly with the lobby.
 
-## Requirements
+The goal is not to turn the shop into chaos. The goal is to give the game more room to breathe.
 
-- BepInEx 5.4.23.5
-- R.E.P.O. v0.4.0
+## Settings
 
-All players in a multiplayer lobby should install the same mod version.
+The config is created after launching the game once with the mod installed.
 
-## Configuration
+### General
 
-The config is created automatically after first launch:
+This section controls the big switches.
 
-`BepInEx/config/DarkSpider90.MoreStandsForShops.cfg`
+- Enable or disable the whole mod.
+- Enable or disable the extra upgrade stand.
+- Enable or disable the shelf and table changes.
+- Enable or disable the shop pool override.
+- Enable debug logs if you want to check what the mod is doing.
 
-Main sections:
+### Item Counts
 
-- `General`
-  - Enable or disable the mod.
-  - Enable or disable the additional upgrade stand.
-  - Enable or disable the vanilla shelf/table rewrite.
-  - Enable or disable the shop pool limit override.
-  - Enable debug logs.
+This is where you decide how much of each item type can show up.
 
-- `Item Counts`
-  - Controls category item limits.
-  - Setting a category to `0` disables that category.
+Set something to `0` if you do not want that category to appear through this mod.
 
-- `Same Item Copies`
-  - Controls how many copies of the exact same item can appear.
+For example:
 
-- `Item Spawn Chances`
-  - Per-item relative chance weights.
-  - `0` disables an item in this mod's shop pools.
-  - `100` is the default weight.
+- More upgrades if your group likes heavy upgrade shopping.
+- Fewer drones if they feel too common.
+- Fewer C.A.R.T. Cannons if they are taking over the shop.
+- More health packs if your team is having one of those nights.
 
-## Installation
+### Same Item Copies
 
-### Mod Manager
+This controls how many copies of the exact same item can appear.
 
-Install with a Thunderstore-compatible mod manager.
+If you want variety, keep these lower.  
+If you do not mind seeing repeats, raise them.
 
-### Manual
+### Item Spawn Chances
 
-1. Install BepInEx.
-2. Place `MoreStandsForShops.dll` into:
+Every item can have its own chance weight.
 
-`BepInEx/plugins/MoreStandsForShops/`
+- `100` is the normal default.
+- `0` disables that item from this mod's shop pools.
+- Higher numbers make an item more likely compared to other items in the same group.
+- Lower numbers make it rarer.
+
+This is useful if you like the item pool overall, but want to tune the mood of your shop.
+
+## Multiplayer
+
+For the smoothest experience, everyone in the lobby should use the same mod version and similar config.
+
+The host decides the shop layout and the other players follow that layout.
+
+## Notes
+
+This mod tries to stay close to the normal shop feeling. Items should still feel like they belong in the shop, just with more space and better organization.
+
+If something looks strange, enable debug logs and check the latest game log. That usually makes it much easier to see what happened.
 
 ## Credits / Inspirations
-
-## Credits
 
 Special thanks to Jettcodey and other R.E.P.O. modders whose earlier shop-related mods helped inspire experimentation with custom stand systems and multiplayer shop layouts.

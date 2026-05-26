@@ -370,3 +370,4 @@ Directory.Build.props
 build.bat
 
 dist
+.idea

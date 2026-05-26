@@ -1,9 +1,0 @@
-{
-  "name": "MoreStandsForShops",
-  "version_number": "1.0.0",
-  "website_url": "",
-  "description": "Adds more shop stands and configurable shop item distribution for R.E.P.O.",
-  "dependencies": [
-    "BepInEx-BepInExPack-5.4.2305"
-  ]
-}
