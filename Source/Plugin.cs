@@ -137,14 +137,15 @@ public class Plugin : BaseUnityPlugin
         ItemCounts["Mines"] = Config.Bind(ic, "Mines", 2, new ConfigDescription("Mines (0-3).", new AcceptableValueRange<int>(0, 3)));
         ItemCounts["Melee"] = Config.Bind(ic, "Melee", 4, new ConfigDescription("Melee weapons (0-6).", new AcceptableValueRange<int>(0, 6)));
         ItemCounts["Guns"] = Config.Bind(ic, "Guns", 4, new ConfigDescription("Guns (0-6).", new AcceptableValueRange<int>(0, 6)));
-        ItemCounts["C.A.R.T. Cannon"] = Config.Bind(ic, "C.A.R.T. Cannon", 1, new ConfigDescription("C.A.R.T. Cannon items (0-4).", new AcceptableValueRange<int>(0, 4)));
+        //ItemCounts["C.A.R.T. Cannon"] = Config.Bind(ic, "C.A.R.T. Cannon", 1, new ConfigDescription("C.A.R.T. Cannon items (0-4).", new AcceptableValueRange<int>(0, 4)));
         ItemCounts["Launchers"] = Config.Bind(ic, "Launchers (Staff)", 2, new ConfigDescription("Launchers/staffs (0-6).", new AcceptableValueRange<int>(0, 6)));
         ItemCounts["Tools"] = Config.Bind(ic, "Tools", 2, new ConfigDescription("Tools (0-4).", new AcceptableValueRange<int>(0, 4)));
         ItemCounts["Health Packs"] = Config.Bind(ic, "Health Packs", 3, new ConfigDescription("Health packs (0-5).", new AcceptableValueRange<int>(0, 5)));
         ItemCounts["Carts"] = Config.Bind(ic, "Carts", 2, new ConfigDescription("Carts (0-4).", new AcceptableValueRange<int>(0, 4)));
         ItemCounts["Pocket Carts"] = Config.Bind(ic, "Pocket Carts", 1, new ConfigDescription("Pocket carts (0-4).", new AcceptableValueRange<int>(0, 4)));
         ItemCounts["Vehicles"] = Config.Bind(ic, "Vehicles", 1, new ConfigDescription("Vehicles (0-4).", new AcceptableValueRange<int>(0, 4)));
-
+        ItemCounts["C.A.R.T. Weapons"] = Config.Bind(ic, "C.A.R.T. Weapons", 1, new ConfigDescription("Total C.A.R.T. Cannon and C.A.R.T. Laser items (0-4).", new AcceptableValueRange<int>(0, 4)));
+        
         // ========== Same Item Copies ==========
         var sic = "Same Item Copies";
         SameItemCopies["Upgrades"] = Config.Bind(sic, "Upgrades", 3, new ConfigDescription("Max copies of the same upgrade item (1-6).", new AcceptableValueRange<int>(1, 6)));
@@ -155,7 +156,8 @@ public class Plugin : BaseUnityPlugin
         SameItemCopies["Grenades"] = Config.Bind(sic, "Grenades", 3, new ConfigDescription("Max copies of the same grenade (1-6).", new AcceptableValueRange<int>(1, 6)));
         SameItemCopies["Mines"] = Config.Bind(sic, "Mines", 2, new ConfigDescription("Max copies of the same mine (1-6).", new AcceptableValueRange<int>(1, 6)));
         SameItemCopies["Health Packs"] = Config.Bind(sic, "Health Packs", 2, new ConfigDescription("Max copies of the same health pack (1-6).", new AcceptableValueRange<int>(1, 6)));
-
+        SameItemCopies["C.A.R.T. Weapons"] = Config.Bind(sic, "C.A.R.T. Weapons", 1, new ConfigDescription("Max copies of the same C.A.R.T. Cannon or C.A.R.T. Laser item (1-6).", new AcceptableValueRange<int>(1, 6)));
+        
         BindVanillaItemSpawnChanceConfigs();
     }
 

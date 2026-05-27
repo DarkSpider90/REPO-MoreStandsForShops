@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+
+- Fixed item count and duplicate spawn limits for C.A.R.T. weapons.
+- Edit LICENCE
+
 ## 1.0.0
 
 - Initial release as MoreStandsForShops.

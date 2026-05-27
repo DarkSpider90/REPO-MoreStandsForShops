@@ -63,7 +63,7 @@ For example:
 
 - More upgrades if your group likes heavy upgrade shopping.
 - Fewer drones if they feel too common.
-- Fewer C.A.R.T. Cannons if they are taking over the shop.
+- Fewer C.A.R.T. Weapons if they are taking over the shop.
 - More health packs if your team is having one of those nights.
 
 ### Same Item Copies

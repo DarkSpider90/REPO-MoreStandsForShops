@@ -23,51 +23,51 @@
 
     <!-- Unity assemblies -->
     <Reference Include="UnityEngine">
-      <HintPath>..\GameAssets\Managed\UnityEngine.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\GameAssets\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\GameAssets\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\GameAssets\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\GameAssets\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\GameAssets\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\GameAssets\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- Game assemblies -->
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\GameAssets\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- Photon assemblies -->
     <Reference Include="Photon3Unity3D">
-      <HintPath>..\GameAssets\Managed\Photon3Unity3D.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\Photon3Unity3D.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="PhotonUnityNetworking">
-      <HintPath>..\GameAssets\Managed\PhotonUnityNetworking.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\PhotonUnityNetworking.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="PhotonRealtime">
-      <HintPath>..\GameAssets\Managed\PhotonRealtime.dll</HintPath>
+      <HintPath>..\..\GameAssets\Managed\PhotonRealtime.dll</HintPath>
       <Private>false</Private>
     </Reference>
 

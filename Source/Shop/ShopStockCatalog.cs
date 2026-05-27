@@ -7,7 +7,8 @@ internal static class ShopStockCatalog
 {
     private static readonly Dictionary<string, (string countKey, string copyKey)> ExactItemConfigKeys = new()
     {
-        { "C.A.R.T. Cannon", ("C.A.R.T. Cannon", null) }
+        { "C.A.R.T. Cannon", ("C.A.R.T. Weapons", "C.A.R.T. Weapons") },
+        { "C.A.R.T. Laser", ("C.A.R.T. Weapons", "C.A.R.T. Weapons") }
     };
 
     internal static IReadOnlyList<string> StandardBudgetCountKeys { get; } = new[]
@@ -17,7 +18,7 @@ internal static class ShopStockCatalog
         "Mines",
         "Melee",
         "Guns",
-        "C.A.R.T. Cannon",
+        "C.A.R.T. Weapons",
         "Launchers",
         "Tools",
         "Carts",
