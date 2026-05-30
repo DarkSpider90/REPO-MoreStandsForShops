@@ -1,4 +1,4 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -7,101 +7,126 @@ namespace MoreStandsForShops.Stands.Upgrade;
 
 internal sealed partial class UpgradeStandRerollController
 {
+    private const byte RerollSyncEvent = 187;
+    private const string SyncMagic = "MSFS_REROLL_V1";
+
+    private const string MsgHoldRequestStart = "HoldRequestStart";
+    private const string MsgHoldRequestStop = "HoldRequestStop";
+    private const string MsgHoldVisualStart = "HoldVisualStart";
+    private const string MsgHoldVisualStop = "HoldVisualStop";
+    private const string MsgHoldVisualProgress = "HoldVisualProgress";
+    private const string MsgRerollRequest = "RerollRequest";
+    private const string MsgRerollVisual = "RerollVisual";
+    private const string MsgBreakBuildUpVisual = "BreakBuildUpVisual";
+    private const string MsgBrokenVisual = "BrokenVisual";
+
     public void OnEvent(EventData photonEvent)
     {
+        if (photonEvent.Code != RerollSyncEvent)
+            return;
+
+        if (photonEvent.CustomData is not object[] data || data.Length < 2)
+            return;
+
+        if (data[0] is not string magic || magic != SyncMagic)
+            return;
+
+        if (data[1] is not string message)
+            return;
+
+        float progress = data.Length > 2 ? ReadProgressPayload(data[2], chargeElapsed) : chargeElapsed;
+
+        if (isBroken &&
+            message != MsgBrokenVisual &&
+            message != MsgBreakBuildUpVisual)
+            return;
+
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Event received. code={photonEvent.Code}, sender={photonEvent.Sender}, isMaster={PhotonNetwork.IsMasterClient}, state={state}.");
-
-        if (photonEvent.Code == HoldRequestStartEvent)
         {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                BeginRemoteHoldVisual(ReadProgressPayload(photonEvent, chargeElapsed));
-                BroadcastHoldVisualStart();
-            }
-
-            return;
+            Plugin.Log.LogInfo(
+                $"[UpgradeStandReroll.Sync] Event received. " +
+                $"msg={message}, sender={photonEvent.Sender}, " +
+                $"isMaster={PhotonNetwork.IsMasterClient}, state={state}.");
         }
 
-        if (photonEvent.Code == HoldRequestStopEvent)
+        switch (message)
         {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                StopRemoteHoldVisual(ReadProgressPayload(photonEvent, chargeElapsed));
-                BroadcastHoldVisualStop();
-            }
+            case MsgHoldRequestStart:
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    BeginRemoteHoldVisual(progress);
+                    BroadcastHoldVisualStart();
+                }
+                return;
 
-            return;
+            case MsgHoldRequestStop:
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    StopRemoteHoldVisual(progress);
+                    BroadcastHoldVisualStop();
+                }
+                return;
+
+            case MsgHoldVisualStart:
+                if (!PhotonNetwork.IsMasterClient)
+                    BeginRemoteHoldVisual(progress);
+                return;
+
+            case MsgHoldVisualStop:
+                if (!PhotonNetwork.IsMasterClient)
+                    StopRemoteHoldVisual(progress);
+                return;
+
+            case MsgHoldVisualProgress:
+                if (!PhotonNetwork.IsMasterClient)
+                    ApplyRemoteHoldProgress(progress);
+                return;
+
+            case MsgRerollRequest:
+                if (PhotonNetwork.IsMasterClient)
+                    TryStartReroll(visualOnly: false, broadcastVisual: true);
+                return;
+
+            case MsgRerollVisual:
+                if (!PhotonNetwork.IsMasterClient)
+                    BeginVisualReroll();
+                return;
+
+            case MsgBreakBuildUpVisual:
+                if (!PhotonNetwork.IsMasterClient)
+                    StartBreakBuildUpVisual();
+                return;
+
+            case MsgBrokenVisual:
+                if (!PhotonNetwork.IsMasterClient)
+                    BreakButton();
+                return;
         }
-
-        if (photonEvent.Code == HoldVisualStartEvent)
-        {
-            if (!PhotonNetwork.IsMasterClient)
-                BeginRemoteHoldVisual(ReadProgressPayload(photonEvent, chargeElapsed));
-
-            return;
-        }
-
-        if (photonEvent.Code == HoldVisualStopEvent)
-        {
-            if (!PhotonNetwork.IsMasterClient)
-                StopRemoteHoldVisual(ReadProgressPayload(photonEvent, chargeElapsed));
-
-            return;
-        }
-        
-        if (photonEvent.Code == HoldVisualProgressEvent)
-        {
-            if (!PhotonNetwork.IsMasterClient)
-                ApplyRemoteHoldProgress(ReadProgressPayload(photonEvent, chargeElapsed));
-
-            return;
-        }
-
-        if (photonEvent.Code == RerollRequestEvent)
-        {
-            if (PhotonNetwork.IsMasterClient)
-                TryStartReroll(visualOnly: false, broadcastVisual: true);
-
-            return;
-        }
-
-        if (photonEvent.Code == RerollVisualEvent)
-        {
-            if (!PhotonNetwork.IsMasterClient)
-                BeginVisualReroll();
-
-            return;
-        }
-
-        if (photonEvent.Code == BreakBuildUpVisualEvent)
-        {
-            if (!PhotonNetwork.IsMasterClient)
-                StartBreakBuildUpVisual();
-
-            return;
-        }
-
-        if (photonEvent.Code == BrokenVisualEvent && !PhotonNetwork.IsMasterClient)
-            BreakButton();
     }
-    
 
-    private void BroadcastRerollVisual()
+    private void RaiseRerollEvent(string message, ReceiverGroup receivers, float? progress = null)
     {
         if (!SemiFunc.IsMultiplayer())
             return;
 
+        object[] payload = progress.HasValue
+            ? new object[] { SyncMagic, message, progress.Value }
+            : new object[] { SyncMagic, message };
+
         PhotonNetwork.RaiseEvent(
-            RerollVisualEvent,
-            new object[0],
-            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
+            RerollSyncEvent,
+            payload,
+            new RaiseEventOptions { Receivers = receivers },
             SendOptions.SendReliable);
+    }
+
+    private void BroadcastRerollVisual()
+    {
+        RaiseRerollEvent(MsgRerollVisual, ReceiverGroup.Others);
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast reroll visual.");
     }
-    
 
     private void BroadcastHoldVisualStop()
     {
@@ -114,17 +139,13 @@ internal sealed partial class UpgradeStandRerollController
         if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
             return;
 
-        PhotonNetwork.RaiseEvent(
-            HoldVisualStopEvent,
-            new object[] { Mathf.Clamp(chargeElapsed, 0f, HoldDuration) },
-            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
-            SendOptions.SendReliable);
+        float progress = Mathf.Clamp(chargeElapsed, 0f, HoldDuration);
+        RaiseRerollEvent(MsgHoldVisualStop, ReceiverGroup.Others, progress);
 
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Broadcast hold visual stop. progress={chargeElapsed:0.00}.");
+            Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Broadcast hold visual stop. progress={progress:0.00}.");
     }
-    
-    
+
     private void BroadcastHoldVisualProgress(bool force)
     {
         if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient || !holdVisualBroadcasted)
@@ -136,13 +157,11 @@ internal sealed partial class UpgradeStandRerollController
 
         holdProgressSyncTimer = 0f;
 
-        PhotonNetwork.RaiseEvent(
-            HoldVisualProgressEvent,
-            new object[] { Mathf.Clamp(chargeElapsed, 0f, HoldDuration) },
-            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
-            SendOptions.SendReliable);
+        RaiseRerollEvent(
+            MsgHoldVisualProgress,
+            ReceiverGroup.Others,
+            Mathf.Clamp(chargeElapsed, 0f, HoldDuration));
     }
-    
 
     private void BroadcastHoldVisualStart()
     {
@@ -155,16 +174,12 @@ internal sealed partial class UpgradeStandRerollController
         if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
             return;
 
-        PhotonNetwork.RaiseEvent(
-            HoldVisualStartEvent,
-            new object[] { Mathf.Clamp(chargeElapsed, 0f, HoldDuration) },
-            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
-            SendOptions.SendReliable);
+        float progress = Mathf.Clamp(chargeElapsed, 0f, HoldDuration);
+        RaiseRerollEvent(MsgHoldVisualStart, ReceiverGroup.Others, progress);
 
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Broadcast hold visual start. progress={chargeElapsed:0.00}.");
+            Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Broadcast hold visual start. progress={progress:0.00}.");
     }
-    
 
     private void BeginVisualReroll()
     {
@@ -184,7 +199,6 @@ internal sealed partial class UpgradeStandRerollController
         visualOnlyReroll = true;
         StateSet(RerollState.PressSucceed);
     }
-    
 
     private void BeginRemoteHoldVisual(float syncedChargeElapsed = -1f)
     {
@@ -211,7 +225,6 @@ internal sealed partial class UpgradeStandRerollController
             chargeElapsed = Mathf.Clamp(syncedChargeElapsed, 0f, HoldDuration);
             resumeChargeFromRollback = chargeElapsed > 0f;
         }
-        
         else
         {
             resumeChargeFromRollback = state == RerollState.Rollback;
@@ -221,7 +234,6 @@ internal sealed partial class UpgradeStandRerollController
         visualOnlyReroll = true;
         StateSet(RerollState.Holding);
     }
-    
 
     private void StopRemoteHoldVisual(float syncedChargeElapsed = -1f)
     {
@@ -229,15 +241,14 @@ internal sealed partial class UpgradeStandRerollController
             return;
 
         remoteHoldVisual = false;
-        
+
         if (syncedChargeElapsed >= 0f)
             chargeElapsed = Mathf.Clamp(syncedChargeElapsed, 0f, HoldDuration);
 
         if (state == RerollState.Holding)
             StateSet(RerollState.Rollback);
     }
-    
-    
+
     private void ApplyRemoteHoldProgress(float syncedChargeElapsed)
     {
         if (!remoteHoldVisual || state != RerollState.Holding)
@@ -247,23 +258,17 @@ internal sealed partial class UpgradeStandRerollController
         SyncChargeStageTriggers(chargeElapsed);
         ApplyChargeVisualsSilent(chargeElapsed);
     }
-    
 
     private void RequestHostReroll()
     {
         if (!SemiFunc.IsMultiplayer())
             return;
 
-        PhotonNetwork.RaiseEvent(
-            RerollRequestEvent,
-            new object[0],
-            new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
-            SendOptions.SendReliable);
+        RaiseRerollEvent(MsgRerollRequest, ReceiverGroup.MasterClient);
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Sent reroll request to host.");
     }
-    
 
     private void RequestHostHoldStart()
     {
@@ -272,16 +277,14 @@ internal sealed partial class UpgradeStandRerollController
 
         holdRequestSent = true;
 
-        PhotonNetwork.RaiseEvent(
-            HoldRequestStartEvent,
-            new object[] { Mathf.Clamp(chargeElapsed, 0f, HoldDuration) },
-            new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
-            SendOptions.SendReliable);
+        RaiseRerollEvent(
+            MsgHoldRequestStart,
+            ReceiverGroup.MasterClient,
+            Mathf.Clamp(chargeElapsed, 0f, HoldDuration));
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Sent hold-start request to host.");
     }
-    
 
     private void RequestHostHoldStop()
     {
@@ -290,56 +293,39 @@ internal sealed partial class UpgradeStandRerollController
 
         holdRequestSent = false;
 
-        PhotonNetwork.RaiseEvent(
-            HoldRequestStopEvent,
-            new object[] { Mathf.Clamp(chargeElapsed, 0f, HoldDuration) },
-            new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
-            SendOptions.SendReliable);
+        RaiseRerollEvent(
+            MsgHoldRequestStop,
+            ReceiverGroup.MasterClient,
+            Mathf.Clamp(chargeElapsed, 0f, HoldDuration));
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Sent hold-stop request to host.");
     }
-    
 
     private void BroadcastBroken()
     {
         if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
             return;
 
-        PhotonNetwork.RaiseEvent(
-            BrokenVisualEvent,
-            new object[0],
-            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
-            SendOptions.SendReliable);
+        RaiseRerollEvent(MsgBrokenVisual, ReceiverGroup.Others);
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast broken visual.");
     }
-
 
     private void BroadcastBreakBuildUpVisual()
     {
         if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
             return;
 
-        PhotonNetwork.RaiseEvent(
-            BreakBuildUpVisualEvent,
-            new object[0],
-            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
-            SendOptions.SendReliable);
+        RaiseRerollEvent(MsgBreakBuildUpVisual, ReceiverGroup.Others);
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast break build-up visual.");
     }
-    
-    
-    private static float ReadProgressPayload(EventData photonEvent, float fallback)
+
+    private static float ReadProgressPayload(object data, float fallback)
     {
-        object data = photonEvent.CustomData;
-
-        if (data is object[] array && array.Length > 0)
-            data = array[0];
-
         return data switch
         {
             float value => value,
@@ -348,5 +334,4 @@ internal sealed partial class UpgradeStandRerollController
             _ => fallback
         };
     }
-    
 }

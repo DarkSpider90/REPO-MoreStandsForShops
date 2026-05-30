@@ -29,7 +29,7 @@ internal sealed partial class UpgradeStandRerollController
         List<CachedUpgrade> upgrades = ScanUpgradesInside();
         if (upgrades.Count == 0)
         {
-            Plugin.Log.LogInfo("[UpgradeStandReroll] Reroll skipped: no upgrades inside stand.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo("[UpgradeStandReroll] Reroll skipped: no upgrades inside stand.");
             StateSet(RerollState.PressFail);
             return;
         }
@@ -37,7 +37,7 @@ internal sealed partial class UpgradeStandRerollController
         int cost = RerollCost;
         if (SemiFunc.StatGetRunCurrency() < cost)
         {
-            Plugin.Log.LogInfo($"[UpgradeStandReroll] Reroll skipped: not enough currency. cost={cost}, current={SemiFunc.StatGetRunCurrency()}.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandReroll] Reroll skipped: not enough currency. cost={cost}, current={SemiFunc.StatGetRunCurrency()}.");
             StateSet(RerollState.PressFail);
             return;
         }
@@ -45,7 +45,7 @@ internal sealed partial class UpgradeStandRerollController
         List<PendingReplacement> replacements = BuildPendingReplacements(upgrades);
         if (replacements.Count == 0)
         {
-            Plugin.Log.LogInfo("[UpgradeStandReroll] Reroll skipped: no valid replacement upgrades.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo("[UpgradeStandReroll] Reroll skipped: no valid replacement upgrades.");
             StateSet(RerollState.PressFail);
             return;
         }
@@ -69,7 +69,7 @@ internal sealed partial class UpgradeStandRerollController
         if (broadcastVisual)
             BroadcastRerollVisual();
 
-        Plugin.Log.LogInfo($"[UpgradeStandReroll] Reroll accepted. upgrades={upgrades.Count}, replacements={replacements.Count}, cost={cost}, rerollCount={rerollCount}, maxBeforeBreak={maxRerollCount}.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandReroll] Reroll accepted. upgrades={upgrades.Count}, replacements={replacements.Count}, cost={cost}, rerollCount={rerollCount}, maxBeforeBreak={maxRerollCount}.");
 
         StateSet(RerollState.PressSucceed);
     }

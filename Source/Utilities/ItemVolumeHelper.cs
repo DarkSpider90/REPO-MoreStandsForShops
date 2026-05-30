@@ -59,7 +59,7 @@ public static class ItemVolumeHelper
                 Plugin.Log.LogInfo($"[ItemVolumeHelper] Volume {volumes[i].name} (Y={volumes[i].transform.position.y:F3}) -> {(i < mid ? "small" : "power_crystal")}");
         }
 
-        Plugin.Log.LogInfo($"[ItemVolumeHelper] Assigned {mid} lower volume(s) to 'small' (drones) and {volumes.Length - mid} upper volume(s) to 'power_crystal'.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ItemVolumeHelper] Assigned {mid} lower volume(s) to 'small' (drones) and {volumes.Length - mid} upper volume(s) to 'power_crystal'.");
     }
 
     private static void CreateDroneCrystalVolumes(GameObject stand)
@@ -89,7 +89,7 @@ public static class ItemVolumeHelper
                 DroneSlotPositions[i]);
         }
 
-        Plugin.Log.LogInfo($"[ItemVolumeHelper] Created {CrystalSlotPositions.Length} crystal ItemVolume(s) and {DroneSlotPositions.Length} drone ItemVolume(s) on drone/crystal stand.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ItemVolumeHelper] Created {CrystalSlotPositions.Length} crystal ItemVolume(s) and {DroneSlotPositions.Length} drone ItemVolume(s) on drone/crystal stand.");
     }
 
     private static ItemVolume CreateVolumeSlot(Transform parent, string name, SemiFunc.itemVolume itemVolume, MoreStandsShelfZone zone, Vector3 localPosition)

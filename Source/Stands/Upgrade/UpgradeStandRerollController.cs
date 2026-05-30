@@ -23,16 +23,6 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
         Broken
     }
     
-    private const byte RerollRequestEvent = 91;
-    private const byte RerollVisualEvent = 92;
-    private const byte BrokenVisualEvent = 93;
-    private const byte HoldVisualStartEvent = 94;
-    private const byte HoldVisualStopEvent = 95;
-    private const byte HoldRequestStartEvent = 96;
-    private const byte HoldRequestStopEvent = 97;
-    private const byte HoldVisualProgressEvent = 98;
-    private const byte BreakBuildUpVisualEvent = 99;
-
     private const float HoldProgressSyncInterval = 0.15f;
     private const float ButtonUseDistance = 3.25f;
     private const float ButtonCastRadius = 0.06f;

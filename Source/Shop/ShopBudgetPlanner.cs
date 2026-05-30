@@ -16,7 +16,8 @@ internal static class ShopBudgetPlanner
         shopManager.itemUpgradesAmount = GetCount("Total Upgrades");
         shopManager.itemHealthPacksAmount = GetCount("Health Packs");
 
-        Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop budgets set: standard={shopManager.itemSpawnTargetAmount}, vanillaCrystals={shopManager.itemConsumablesAmount}, customDrones={GetCount("Drones")}, customCrystals={GetCount("Power Crystals")}, upgrades={shopManager.itemUpgradesAmount}, health={shopManager.itemHealthPacksAmount}.");
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop budgets set: standard={shopManager.itemSpawnTargetAmount}, vanillaCrystals={shopManager.itemConsumablesAmount}, customDrones={GetCount("Drones")}, customCrystals={GetCount("Power Crystals")}, upgrades={shopManager.itemUpgradesAmount}, health={shopManager.itemHealthPacksAmount}.");
     }
 
 
@@ -31,7 +32,8 @@ internal static class ShopBudgetPlanner
 
         shopManager.itemSpawnTargetAmount = System.Math.Max(oldTarget, System.Math.Max(poolCount, activeVolumes));
 
-        Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop pool limit disabled: standard target {oldTarget}->{shopManager.itemSpawnTargetAmount}, standardPool={poolCount}, activeVolumes={activeVolumes}.");
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop pool limit disabled: standard target {oldTarget}->{shopManager.itemSpawnTargetAmount}, standardPool={poolCount}, activeVolumes={activeVolumes}.");
     }
 
 

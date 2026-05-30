@@ -33,7 +33,7 @@ internal static class ShopPoolPlanner
         removed += RemoveControlledShelfItems(shopManager.potentialItemHealthPacks);
 
         if (removed > 0)
-            Plugin.Log.LogInfo($"[ShopPoolPlanner] Removed {removed} controlled shelf entries from vanilla pools; custom shelf handling owns them.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ShopPoolPlanner] Removed {removed} controlled shelf entries from vanilla pools; custom shelf handling owns them.");
     }
 
 
@@ -100,7 +100,7 @@ internal static class ShopPoolPlanner
             int added = AddCategoryCandidates(pool, candidates, countKey, missing);
 
             if (Plugin.DebugLogs.Value && added > 0)
-                Plugin.Log.LogInfo($"[ShopPoolPlanner] Topped up {countKey} pool: added={added}, before={current}, target={target}.");
+                if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ShopPoolPlanner] Topped up {countKey} pool: added={added}, before={current}, target={target}.");
         }
     }
 
@@ -236,7 +236,7 @@ internal static class ShopPoolPlanner
         if (Plugin.DebugLogs.Value)
         {
             string counts = string.Join(", ", countPerCategory.OrderBy(kvp => kvp.Key).Select(kvp => $"{kvp.Key}={kvp.Value}/{GetCount(kvp.Key)}"));
-            Plugin.Log.LogInfo($"[ShopPoolPlanner] Filtered {listName} pool: {before} -> {result.Count}. Category counts: {counts}");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ShopPoolPlanner] Filtered {listName} pool: {before} -> {result.Count}. Category counts: {counts}");
         }
 
         return result;
@@ -276,7 +276,7 @@ internal static class ShopPoolPlanner
 
         if (chanceDisabled > 0)
         {
-            Plugin.Log.LogInfo($"[ShopPoolPlanner] Removed {chanceDisabled} {listName} pool entries because item spawn chance is 0.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ShopPoolPlanner] Removed {chanceDisabled} {listName} pool entries because item spawn chance is 0.");
         }
 
         return weightedItems

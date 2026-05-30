@@ -26,7 +26,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.Items] Built replacement list. " +
                 $"source={upgrades.Count}, replacements={replacements.Count}.");
         }
@@ -62,7 +62,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.Items] Scan complete. " +
                 $"colliders={colliders.Length}, upgrades={result.Count}, " +
                 $"scanBox={NameOrNull(scanBox)}, position={scanBox.position}, scale={scanBox.localScale}.");
@@ -157,7 +157,7 @@ internal sealed partial class UpgradeStandRerollController
         {
             if (Plugin.DebugLogs.Value)
             {
-                Plugin.Log.LogInfo(
+                if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                     $"[UpgradeStandReroll.Items] No replacement candidates. " +
                     $"previous={ItemKey(previous)}, allowPrevious={allowPrevious}, sameLimit={sameLimit}.");
             }
@@ -174,7 +174,7 @@ internal sealed partial class UpgradeStandRerollController
             {
                 if (Plugin.DebugLogs.Value)
                 {
-                    Plugin.Log.LogInfo(
+                    if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                         $"[UpgradeStandReroll.Items] Selected replacement. " +
                         $"previous={ItemKey(previous)}, selected={item.name}, " +
                         $"allowPrevious={allowPrevious}, candidates={candidates.Count}, totalWeight={totalWeight}.");
@@ -190,7 +190,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.Items] Selected fallback replacement. " +
                 $"previous={ItemKey(previous)}, selected={fallback.name}, candidates={candidates.Count}.");
         }
@@ -208,7 +208,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.Items] Destroy upgrade. " +
                 $"object={target.name}, hasPhotonView={view != null}, multiplayer={SemiFunc.IsMultiplayer()}.");
         }
@@ -235,7 +235,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.Items] Spawn replacement. " +
                 $"item={item.name}, position={position}, rotation={rotation.eulerAngles}, multiplayer={SemiFunc.IsMultiplayer()}.");
         }

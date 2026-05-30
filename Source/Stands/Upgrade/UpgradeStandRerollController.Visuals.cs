@@ -181,7 +181,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.State] Resume from rollback stage={stageJustRolledBack}, " +
                 $"chargeElapsed={chargeElapsed:0.00}.");
         }

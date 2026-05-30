@@ -13,6 +13,17 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
     private static bool _isApplying;
     private static int _lastAppliedSequence;
 
+    // Вызывать при выходе в меню / смене сессии, чтобы не застрять с _isApplying=true
+    internal static void Reset()
+    {
+        if (_instance != null)
+            _instance.StopAllCoroutines();
+
+        _isApplying = false;
+        // _lastAppliedSequence НЕ сбрасываем — он защищает от повторного применения
+        // одного и того же layout при реконнекте в ту же комнату
+    }
+
     internal static void ApplyWhenReady()
     {
         if (_isApplying)
@@ -64,7 +75,8 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
         if (ShopLayoutSync.TryGetUpgradeStand(out UpgradeStandLayout upgradeLayout))
         {
-            Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Upgrade layout received: variant={upgradeLayout.VariantId}, slots={upgradeLayout.UpgradeSlotCount}.");
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Upgrade layout received: variant={upgradeLayout.VariantId}, slots={upgradeLayout.UpgradeSlotCount}.");
 
             appliedAny |= UpgradeStandSpawner.SpawnNetworkVisual(
                 "room-layout",
@@ -77,7 +89,8 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
         if (ShopLayoutSync.TryGetDroneCrystalShelf(out DroneCrystalShelfLayout shelfLayout))
         {
-            Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Shelf layout received: droneSlots={shelfLayout.DroneSlotCount}, crystalSlots={shelfLayout.CrystalSlotCount}.");
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Shelf layout received: droneSlots={shelfLayout.DroneSlotCount}, crystalSlots={shelfLayout.CrystalSlotCount}.");
 
             appliedAny |= DroneCrystalStandSpawner.SpawnNetworkVisual(
                 "room-layout",
@@ -86,9 +99,12 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
         _lastAppliedSequence = sequence;
 
-        if (appliedAny)
-            Plugin.Log.LogInfo("[ClientShopLayoutApplier] Applied host shop layout.");
-        else
-            Plugin.Log.LogInfo("[ClientShopLayoutApplier] Host shop layout was ready but contained no custom stands.");
+        if (Plugin.DebugLogs.Value)
+        {
+            if (appliedAny)
+                Plugin.Log.LogInfo("[ClientShopLayoutApplier] Applied host shop layout.");
+            else
+                Plugin.Log.LogInfo("[ClientShopLayoutApplier] Host shop layout was ready but contained no custom stands.");
+        }
     }
 }

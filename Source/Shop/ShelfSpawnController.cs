@@ -37,7 +37,7 @@ internal static class ShelfSpawnController
             .ToList();
 
         int upgradeCount = ShopManager.instance.itemVolumes.Count(volume => volume.GetComponent<MoreStandsUpgradeVolume>() != null);
-        if (upgradeCount > 0)
+        if (upgradeCount > 0 && Plugin.DebugLogs.Value)
         {
             Plugin.Log.LogInfo($"[ShelfSpawnController] Prioritized {upgradeCount} additional upgrade ItemVolume(s).");
         }
@@ -59,7 +59,8 @@ internal static class ShelfSpawnController
         }
 
         ShopManager.instance.itemVolumes.RemoveAll(volume => volume == null || volume.GetComponent<MoreStandsShelfVolume>() != null);
-        Plugin.Log.LogInfo($"[ShelfSpawnController] Removed {shelfVolumes.Count} controlled shelf ItemVolume(s) from vanilla population.");
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[ShelfSpawnController] Removed {shelfVolumes.Count} controlled shelf ItemVolume(s) from vanilla population.");
 
         foreach (ItemVolume volume in shelfVolumes)
         {
@@ -73,7 +74,8 @@ internal static class ShelfSpawnController
             Item item = ShelfItemSelector.Select(marker.Zone, volume.itemVolume);
             if (item == null)
             {
-                Plugin.Log.LogInfo($"[ShelfSpawnController] Shelf slot skipped: zone={marker.Zone}, slotVolume={volume.itemVolume}, target={ShelfItemSelector.TargetFor(marker.Zone)}, spawned={ShelfItemSelector.SpawnedCount(marker.Zone)}.");
+                if (Plugin.DebugLogs.Value)
+                    Plugin.Log.LogInfo($"[ShelfSpawnController] Shelf slot skipped: zone={marker.Zone}, slotVolume={volume.itemVolume}, target={ShelfItemSelector.TargetFor(marker.Zone)}, spawned={ShelfItemSelector.SpawnedCount(marker.Zone)}.");
                 continue;
             }
 
@@ -85,7 +87,8 @@ internal static class ShelfSpawnController
             }
 
             ShelfItemSelector.RecordSpawn(marker.Zone, item);
-            Plugin.Log.LogInfo($"[ShelfSpawnController] Spawned shelf item: zone={marker.Zone}, item={ShelfItemSelector.ItemName(item)}, slotVolume={volume.itemVolume}.");
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[ShelfSpawnController] Spawned shelf item: zone={marker.Zone}, item={ShelfItemSelector.ItemName(item)}, slotVolume={volume.itemVolume}.");
         }
     }
 
@@ -135,7 +138,8 @@ internal static class ShelfSpawnController
                 spawnCount++;
             }
 
-            Plugin.Log.LogInfo($"[ShelfSpawnController] Spawned {marker.Zone}: {ShelfItemSelector.ItemName(item)} in slotVolume={itemVolume.itemVolume}.");
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[ShelfSpawnController] Spawned {marker.Zone}: {ShelfItemSelector.ItemName(item)} in slotVolume={itemVolume.itemVolume}.");
         }
         else
         {

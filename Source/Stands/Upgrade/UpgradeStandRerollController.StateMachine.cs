@@ -195,7 +195,7 @@ internal sealed partial class UpgradeStandRerollController
 
             if (Plugin.DebugLogs.Value)
             {
-                Plugin.Log.LogInfo(
+                if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                     $"[UpgradeStandReroll.State] Stage rollback started. " +
                     $"chargeElapsed={chargeElapsed:0.00}, topStage={rollbackTopStage}.");
             }
@@ -558,7 +558,7 @@ internal sealed partial class UpgradeStandRerollController
     private void StateSet(RerollState nextState)
     {
         if (Plugin.DebugLogs.Value && state != nextState)
-            Plugin.Log.LogInfo($"[UpgradeStandReroll.State] {state} -> {nextState}.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandReroll.State] {state} -> {nextState}.");
 
         state = nextState;
         stateStart = true;

@@ -66,7 +66,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.Binding] Copied vanilla references. " +
                 $"vanilla={vanillaStand.name}, scanBox={NameOrNull(scanBox)}, button={NameOrNull(buttonRoot)}, " +
                 $"hatch={NameOrNull(hatch)}, compartment={NameOrNull(upgradeCompartment)}, " +

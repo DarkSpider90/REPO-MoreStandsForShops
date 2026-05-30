@@ -1,0 +1,211 @@
+[Message:   BepInEx] BepInEx 5.4.23.5 - REPO (08.05.2026 2:01:30)
+[Info   :   BepInEx] Running under Unity v2022.3.67.7073210
+[Info   :   BepInEx] CLR runtime version: 4.0.30319.42000
+[Info   :   BepInEx] Supports SRE: True
+[Info   :   BepInEx] System platform: Bits64, Windows
+[Message:   BepInEx] Preloader started
+[Info   :   BepInEx] Loaded 1 patcher method from [BepInEx.Preloader 5.4.23.5]
+[Info   :   BepInEx] Loaded 1 patcher method from [BepInEx.MonoMod.AutoHookGenPatcher 1.1.1.0]
+[Info   :   BepInEx] Loaded 1 patcher method from [Hamunii.DetourContext.Dispose_Fix 1.0.9.0]
+[Info   :   BepInEx] 3 patcher plugins loaded
+[Info   :   BepInEx] Patching [UnityEngine.CoreModule] with [BepInEx.Chainloader]
+[Message:   BepInEx] Preloader finished
+[Message:   BepInEx] Chainloader ready
+[Message:   BepInEx] Chainloader started
+[Info   :   BepInEx] 30 plugins to load
+[Info   :   BepInEx] Loading [Menu Lib 2.5.4]
+[Info   :   BepInEx] Loading [REPOConfig 1.2.6]
+[Info   :   BepInEx] Loading [ScalerCore 0.6.1]
+[Info   :   BepInEx] Loading [ShrinkCart 0.2.33]
+[Info   :ShrinkCart] ShrinkCart 0.2.33 loaded.
+[Info   :   BepInEx] Loading [KeybindLib 1.0.6]
+[Message:KeybindLib] KeybindLib has started.
+[Info   :   BepInEx] Loading [NoSaveDelete 1.3.0]
+[Info   :NoSaveDelete] Mod NoSaveDelete loaded.
+[Info   :NoSaveDelete] Settings can be changed in BepInEx/config/com.PxntxrezStudio.nosavedelete.cfg
+[Info   :   BepInEx] Loading [EnemyHealthBar 1.0.0]
+[Info   :EnemyHealthBar] EnemyHealthBar by DarkSpider90 loaded. v1.0.0
+[Info   :   BepInEx] Loading [REPOLib 4.1.0]
+[Info   :   REPOLib] REPOLib has awoken!
+[Info   :   BepInEx] Loading [Extra Battle Upgrades 1.0.0]
+[Info   :Extra Battle Upgrades] Registered Armor upgrade.
+[Info   :Extra Battle Upgrades] Registered Overcharge upgrade.
+[Info   :Extra Battle Upgrades] Registered Energy Leech upgrade.
+[Info   :Extra Battle Upgrades] Registered Shock Grip upgrade.
+[Info   :Extra Battle Upgrades] Registered Second Chance upgrade.
+[Info   :Extra Battle Upgrades] Registered Panic Response upgrade.
+[Info   :Extra Battle Upgrades] Extra Battle Upgrades v1.0.0 loaded for R.E.P.O. v0.4.0.
+[Info   :   BepInEx] Loading [Extra Inventory Slots 1.0.0]
+[Info   :Extra Inventory Slots] Extra Inventory Slots v1.0.0 loaded for R.E.P.O. v0.4.0.
+[Info   :   BepInEx] Loading [LevelValuesAndCosmeticsScanner 1.0.0]
+[Info   :LevelValuesAndCosmeticsScanner] LevelValuesAndCosmeticsScanner 1.0.0 loaded.
+[Info   :   BepInEx] Loading [DarkSpider Map Tracker 0.3.1]
+[Info   :DarkSpider Map Tracker] DarkSpider Map Tracker 0.3.1 loaded.
+[Info   :   BepInEx] Loading [MoreStandsForShops 1.0.0]
+[Info   :MoreStandsForShops] Created vanilla item spawn chance config entries for 70 items.
+[Info   :MoreStandsForShops] MoreStandsForShops v1.0.0 loaded.
+[Info   :   BepInEx] Loading [Remaining Value Tracker 0.1.1]
+[Info   :Remaining Value Tracker] Remaining Value Tracker v0.1.1 loaded for R.E.P.O. v0.4.0.
+[Info   :   BepInEx] Loading [TextUpgradesUIScale 1.2.1]
+[Info   :TextUpgradesUIScale] Loaded TextUpgradesUIScale 1.2.1 for R.E.P.O. v0.4.0 UI.
+[Info   :   BepInEx] Loading [REPOGambling 1.7.1]
+[Info   :REPOGambling] Embedded resource: REPOGambling.gamblingbundle
+[Info   :REPOGambling] [REPOGambling] Loaded module prefab: assets/repo/game/resources/level/shop/modules/module - shop - de - gambling room.prefab
+[Info   :REPOGambling] [REPOGambling] Loaded module prefab: assets/repo/game/resources/level/shop/modules/module - shop - de - solo wheel.prefab
+[Info   :REPOGambling] Registering Module - Shop - DE - Gambling Room
+[Info   :REPOGambling] Registering Module - Shop - DE - Solo Wheel
+[Info   :REPOGambling] DirtyGames.REPOGambling v1.7.1 has loaded!
+[Info   :   BepInEx] Loading [Free Bird 1.0.1]
+[Info   :   BepInEx] Loading [FullHealth 1.9.0]
+[Info   :FullHealth] Mod 'FullHealth' is loaded!
+[Info   :FullHealth] Configuration can be changed in 'BepInEx/config/FullHealth.cfg'
+[Info   :   BepInEx] Loading [GoopUpgrades 1.1.0]
+[Info   :GoopUpgrades] You've got yourself a winner here...
+[Info   :   REPOLib] Loading bundle at D:\Games\Steam\steamapps\common\REPO\BepInEx\plugins\GoopSwagger-GoopUpgrades\goopupgrades...
+[Info   :   BepInEx] Loading [DeathMinimap 2.0.0]
+[Info   :DeathMinimap] HappyCats.DeathMinimap v2.0.0 has loaded!
+[Info   :   BepInEx] Loading [NoItemSpawnLimit 1.0.8]
+[Info   :NoItemSpawnLimit] HeroHanex.NoItemSpawnLimit v1.0.8 has loaded!
+[Info   :   BepInEx] Loading [REPOPathfinder 0.7.2]
+[Info   :REPOPathfinder] Patched InputAction.ReadValue<T>() for 3 closed generic(s).
+[Info   :REPOPathfinder] REPOPathfinder 0.7.2 loaded. Toggle key: F4
+[Info   :   BepInEx] Loading [Repo Admin Menu 1.0.16]
+[Info   :Repo Admin Menu] R.A.M. (1.0.16) has been allocated!
+[Info   :   BepInEx] Loading [REPO Roles Classic 3.0.1]
+[Info   :REPO Roles Classic] Plugin REPO Roles Classic v3.0.2 loaded successfully.
+[Info   :   REPOLib] Loading bundle at D:\Games\Steam\steamapps\common\REPO\BepInEx\plugins\R3Labs-REPORoles_Classic\REPORoles_assets2...
+[Info   :   BepInEx] Loading [Remove Monster Orb Cap 1.0.2]
+[Info   :RavenMother.OrbCap] The Orb Awakens
+[Info   :   BepInEx] Loading [RechargeableDefibro 1.0.0]
+[Info   :RechargeableDefibro] RechargeableDefibro v1.0.0 loaded — Defibro is now rechargeable!
+[Info   :   BepInEx] Loading [Shop Items spawn in Level 1.7.21]
+[Info   :Shop Items spawn in Level] Plugin REPO_Shop_Items_in_Level is loaded!
+[Info   :Shop Items spawn in Level] Harmony patches applied!
+[Info   :   BepInEx] Loading [Enemy/Valuable Spawn Manager 0.6.9.0]
+[Info   :soundedsquash.spawnmanager] Enemy/Valuable Spawn Manager loaded
+[Info   :   BepInEx] Loading [Self Moving Cart 1.3.3]
+[Info   :Syntaxe.SelfMovingCart] Syntaxe.SelfMovingCart is now awake!
+[Info   :   BepInEx] Loading [More Efficient ChargingStation 1.0.1]
+[Info   :More Efficient ChargingStation] MoreEfficientChargingStationが起動しました！
+[Info   :More Efficient ChargingStation] MoreEfficientChargingStation:Multiplier = 6,00
+[Info   :More Efficient ChargingStation] MoreEfficientChargingStation:EnableEnergyCrystalPriceAdjustment = False
+[Info   :More Efficient ChargingStation] MoreEfficientChargingStation:EnableLogging = False
+[Message:   BepInEx] Chainloader startup complete
+[Message:KeybindLib] 0 keybind(s) and 0 toggle(s) has been initialized.
+[Info   : Unity Log] Odin Serializer ArchitectureInfo initialization with defaults (all unaligned read/writes disabled).
+[Info   : Unity Log] Odin Serializer detected whitelisted runtime platform WindowsPlayer and memory read test succeeded; enabling all unaligned memory read/writes.
+[Info   :soundedsquash.spawnmanager] Failed to determine if it is the menu level.
+[Info   :   REPOLib] Adding levels.
+[Info   :   REPOLib] Adding valuables to valuable presets.
+[Info   :   REPOLib] Adding enemies.
+[Info   : Unity Log] VERSION: v0.4.4.3
+Setting breakpad minidump AppID = 3241660
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198038785176 [API loaded no]
+[Info   : Unity Log] Steam - App ID: 3241660
+[Info   : Unity Log] Steam - User ID: 76561198038785176
+[Info   :   REPOLib] Adding commands.
+[Info   : Unity Log] Commands Loaded (Chat): 5
+[Info   : Unity Log] Commands Loaded (Debug): 24
+[Info   : Unity Log] [MetaSave] MetaSave.es3 found
+[Info   :   REPOLib] [MetaSaveModded] MetaSaveModded.es3 found
+[Info   :   REPOLib] Adding level ambiences.
+[Info   :REPO Roles Classic] [PrArPch]: Added ReaperManager to avatar steamID= pv=0
+[Info   :REPO Roles Classic] ReaperEventListener created!
+[Info   : Unity Log] [NoSaveDelete] InGameSaveSelector Awake() called
+[Info   : Unity Log] [NoSaveDelete] InGameSaveSelector added to player!
+[Info   : Unity Log] [NoSaveDelete] QuickSaveReload added to player!
+[Info   :REPO Roles Classic] Registered upgrade item 'Mana Regeneration Upgrade'.
+[Info   :REPO Roles Classic] Registered upgrade item 'Scout Cooldown Upgrade'.
+[Info   :   REPOLib] Finished loading bundles.
+[Info   :   REPOLib] Adding cosmetics.
+[Info   :   REPOLib] [MetaSaveModded] MetaSaveModded.es3 found
+[Info   :NoItemSpawnLimit] RemoveSpawnLimit is enabled. Applying predefined config of 10000 to all items...
+[Info   :NoItemSpawnLimit] RemoveSpawnLimit is enabled. Applying predefined config of 10000 to all items...
+[Info   : Unity Log] Leave Photon
+[Info   : Unity Log] Steam: Leaving lobby...
+[Info   : Unity Log] [NoSaveDelete] Returning to the main menu. Flags were not set — no reset needed.
+[Info   : Unity Log] Leave to Main Menu
+[Info   :   REPOLib] Adding enemies.
+[Info   :REPO Roles Classic] [PrArPch]: Added ReaperManager to avatar steamID= pv=0
+[Info   : Unity Log] [NoSaveDelete] InGameSaveSelector Awake() called
+[Info   : Unity Log] [NoSaveDelete] InGameSaveSelector added to player!
+[Info   : Unity Log] [NoSaveDelete] QuickSaveReload added to player!
+[Info   :Shop Items spawn in Level] Initializing disallowed items list
+[Info   :NoItemSpawnLimit] RemoveSpawnLimit is enabled. Applying predefined config of 10000 to all items...
+[Info   :NoItemSpawnLimit] RemoveSpawnLimit is enabled. Applying predefined config of 10000 to all items...
+[Info   : Unity Log] [NoSaveDelete] ========================================
+[Info   : Unity Log] [NoSaveDelete] Save limit (10 max) has been REMOVED!
+[Info   : Unity Log] [NoSaveDelete] You can now create UNLIMITED saves!
+[Info   : Unity Log] [NoSaveDelete] ========================================
+[Info   :   REPOLib] Adding items.
+[Info   : Unity Log] Loading save
+[Info   : Unity Log] Changed level to: Level - Shop Dead Forest
+[Info   :   REPOLib] Adding enemies.
+[Info   : Unity Log] [REPOGambling] Service Station found, Starting gambling room patch!
+[Info   :REPOGambling] [REPOGambling] Loaded module prefab: assets/repo/game/resources/level/shop/modules/module - shop - de - gambling room.prefab
+[Info   :REPOGambling] [REPOGambling] Loaded module prefab: assets/repo/game/resources/level/shop/modules/module - shop - de - solo wheel.prefab
+[Warning:   REPOLib] Failed to register network prefab "Level/Shop/Modules/Module - Shop - DE - Gambling Room". Prefab is already registered.
+[Info   : Unity Log] [REPOGambling] Injected gambling room: Module - Shop - DE - Gambling Room
+[Info   :REPO Roles Classic] [PrArPch]: Added ReaperManager to avatar steamID= pv=0
+[Info   : Unity Log] [NoSaveDelete] InGameSaveSelector Awake() called
+[Info   : Unity Log] [NoSaveDelete] InGameSaveSelector added to player!
+[Info   : Unity Log] [NoSaveDelete] QuickSaveReload added to player!
+[Info   :Syntaxe.SelfMovingCart] Extraction position: (-5.00, 0.00, 12.50), rotation: (0.00000, 0.92388, 0.00000, 0.38268)
+[Info   : Unity Log] [REPOGambling] Setup Slot machine!
+[Info   : Unity Log] [REPOGambling] Setup Slot machine!
+[Info   : Unity Log] [REPOGambling] Setup Slot machine!
+[Info   : Unity Log] [REPOGambling] Setup Wheel!
+[Info   :MoreStandsForShops] [ShopManagerPatch] Running host shop initialization customizations...
+[Info   :MoreStandsForShops] [UpgradeStandSpawner] Upgrade stand prefab prepared.
+[Warning:MoreStandsForShops] [UpgradeStandSpawner] No valid spawn point found.
+[Info   :MoreStandsForShops] [DroneCrystalStandSpawner] Drone/Crystal stand prefab prepared.
+[Info   :MoreStandsForShops] [ItemVolumeHelper] Created 5 crystal ItemVolume(s) and 8 drone ItemVolume(s) on drone/crystal stand.
+[Info   :MoreStandsForShops] [DroneCrystalStandSpawner] Drone/Crystal stand spawned successfully. itemVolumes=True, disabled=3.
+[Info   :MoreStandsForShops] [ShelfTableRewrite] Converted table item area to multi-size slots: root=Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/ITEM STANDS/ITEMS, originalVolumes=16, slotGroups=16, reused=16, created=32, disabled=0.
+[Info   :MoreStandsForShops] [ShelfTableRewrite] Rewritten health shelves=1, converted table slot group(s)=16.
+[Info   :MoreStandsForShops] Created/updated item spawn chance config entries for 79 items.
+[Info   :MoreStandsForShops] [ShopItemLimitPlanner] Applied item count overrides.
+[Info   :MoreStandsForShops] [ShopManagerPatch] Customization complete.
+[Info   :MoreStandsForShops] [ShopItemLimitPlanner] Applied item count overrides.
+[Info   :REPO Roles Classic] ShopManagerPatch: Filtering upgrades (Master: True)
+[Info   :MoreStandsForShops] [ShopPoolPlanner] Removed 27 controlled shelf entries from vanilla pools; custom shelf handling owns them.
+[Info   :MoreStandsForShops] [ShopPoolPlanner] Removed 1 standard pool entries because item spawn chance is 0.
+[Info   :MoreStandsForShops] [ShopBudgetPlanner] Shop budgets set: standard=25, vanillaCrystals=0, customDrones=8, customCrystals=5, upgrades=28, health=3.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Removed 19 controlled shelf ItemVolume(s) from vanilla population.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Crystal, item=Energy Crystal, slotVolume=power_crystal.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Crystal, item=Energy Crystal, slotVolume=power_crystal.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Crystal, item=Energy Crystal, slotVolume=power_crystal.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Crystal, item=Energy Crystal, slotVolume=power_crystal.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Crystal, item=Energy Crystal, slotVolume=power_crystal.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Recharge Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Recharge Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Indestructible Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Zero Gravity Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Zero Gravity Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Indestructible Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Roll Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Drone, item=Roll Drone, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Grenade, item=Grenade, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Grenade, item=Stun Grenade, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Grenade, item=Stun Grenade, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Grenade, item=Shockwave Grenade, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Spawned shelf item: zone=Grenade, item=Grenade, slotVolume=small.
+[Info   :MoreStandsForShops] [ShelfSpawnController] Shelf slot skipped: zone=Grenade, slotVolume=small, target=5, spawned=5.
+[Info   :MoreStandsForShops] [ShopBudgetPlanner] Shop pool limit disabled: standard target 25->90, standardPool=15, activeVolumes=90.
+[Info   :RechargeableDefibro] [RechargeableDefibro] Added ItemBattery to Defibro.
+[Info   :NoItemSpawnLimit] RemoveSpawnLimit is enabled. Applying predefined config of 10000 to all items...
+[Info   :NoItemSpawnLimit] RemoveSpawnLimit is enabled. Applying predefined config of 10000 to all items...
+[Info   :Repo Admin Menu] Opening menu
+[Error  : Unity Log] NullReferenceException: Object reference not set to an instance of an object
+Stack trace:
+SemiFunc.UIGetRectTransformPositionOnScreen (UnityEngine.RectTransform rectTransform, System.Boolean withScreenMultiplier) (at <1c90b0d8158146df9ef59f2001a80ebf>:0)
+(wrapper dynamic-method) SemiFunc.DMD<SemiFunc::UIMouseHover>(MenuPage,UnityEngine.RectTransform,string,single,single,MenuScrollBox,UnityEngine.UI.ScrollRect)
+MenuButton.RegisterHover () (at <1c90b0d8158146df9ef59f2001a80ebf>:0)
+MenuManager.Update () (at <1c90b0d8158146df9ef59f2001a80ebf>:0)
+
+[Info   :Repo Admin Menu] Opening: Menu Page R.E.P.O. Admin Menu
+[Info   :Repo Admin Menu] Closing: Menu Page R.E.P.O. Admin Menu
+[Info   :Repo Admin Menu] Opening: Menu Page R.A.M. - Map Settings
+[Info   :Repo Admin Menu] Closing: Menu Page R.A.M. - Map Settings
+[Info   :Repo Admin Menu] Opening: Menu Page R.E.P.O. Admin Menu
+[Info   :Repo Admin Menu] Closing: Menu Page R.E.P.O. Admin Menu

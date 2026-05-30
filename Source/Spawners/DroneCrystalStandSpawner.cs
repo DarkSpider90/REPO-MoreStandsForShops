@@ -118,7 +118,7 @@ public static class DroneCrystalStandSpawner
             });
         }
 
-        Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Drone/Crystal stand spawned successfully. itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Drone/Crystal stand spawned successfully. itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}.");
         return true;
     }
 
@@ -157,7 +157,7 @@ public static class DroneCrystalStandSpawner
         spawnedStand.transform.SetParent(props, true);
         DisableItemVolumes(spawnedStand);
 
-        Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Network visual spawned: id={spawnId}, parent={GetTransformPath(props)}.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Network visual spawned: id={spawnId}, parent={GetTransformPath(props)}.");
         return true;
     }
 
@@ -190,7 +190,7 @@ public static class DroneCrystalStandSpawner
         if (pv != null) Object.Destroy(pv);
 
         _prefabPrepared = true;
-        Plugin.Log.LogInfo("[DroneCrystalStandSpawner] Drone/Crystal stand prefab prepared.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo("[DroneCrystalStandSpawner] Drone/Crystal stand prefab prepared.");
         return true;
     }
 

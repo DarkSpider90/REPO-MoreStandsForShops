@@ -2,13 +2,28 @@ namespace MoreStandsForShops.Shop;
 
 internal static class ShopItemLimitPlanner
 {
+    // Флаг: конфиги для предметов уже были зарегистрированы в эту сессию
+    private static bool _spawnChanceConfigsEnsured;
+
+    // Сброс при выходе в меню — чтобы при следующей сессии снова подхватить новые предметы
+    internal static void ResetForSession()
+    {
+        _spawnChanceConfigsEnsured = false;
+    }
+
     internal static void ApplyConfiguredItemLimits()
     {
         var itemDict = StatsManager.instance?.itemDictionary;
         if (itemDict == null)
             return;
 
-        Plugin.EnsureItemSpawnChanceConfigs(itemDict.Values);
+        // EnsureItemSpawnChanceConfigs вызывается только один раз за сессию,
+        // а не при каждом вызове ApplyConfiguredItemLimits
+        if (!_spawnChanceConfigsEnsured)
+        {
+            Plugin.EnsureItemSpawnChanceConfigs(itemDict.Values);
+            _spawnChanceConfigsEnsured = true;
+        }
 
         foreach (var item in itemDict.Values)
         {
@@ -31,6 +46,7 @@ internal static class ShopItemLimitPlanner
                 Plugin.Log.LogInfo($"[ShopItemLimitPlanner] Set {item.itemName} maxAmountInShop to {newMax}");
         }
 
-        Plugin.Log.LogInfo("[ShopItemLimitPlanner] Applied item count overrides.");
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo("[ShopItemLimitPlanner] Applied item count overrides.");
     }
 }

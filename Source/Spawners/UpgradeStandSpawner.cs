@@ -69,7 +69,7 @@ public static class UpgradeStandSpawner
             }
 
             if (gamblingCompatibility && !string.IsNullOrEmpty(point.ExtraModule) && Plugin.DebugLogs.Value)
-                Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' allowed by gambling shop module compatibility.");
+                if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' allowed by gambling shop module compatibility.");
 
             // Calculate world position and rotation
             Vector3 position = module.TransformPoint(point.LocalPosition);
@@ -126,7 +126,7 @@ public static class UpgradeStandSpawner
                             : 14
                 });
 
-            Plugin.Log.LogInfo($"[UpgradeStandSpawner] Successfully spawned additional upgrade stand: variant={point.VariantId}, sourceCount={point.SourceCount}, main={point.MainModule}, extra={point.ExtraModule ?? "<fallback>"}, local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Successfully spawned additional upgrade stand: variant={point.VariantId}, sourceCount={point.SourceCount}, main={point.MainModule}, extra={point.ExtraModule ?? "<fallback>"}, local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}.");
             return true;
         }
 
@@ -156,7 +156,7 @@ public static class UpgradeStandSpawner
         spawnedStand.transform.SetParent(parent, true);
         DisableItemVolumes(spawnedStand);
 
-        Plugin.Log.LogInfo($"[UpgradeStandSpawner] Network visual spawned: id={spawnId}, variant={variantId}, parent={parentPath}.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Network visual spawned: id={spawnId}, variant={variantId}, parent={parentPath}.");
         return true;
     }
 
@@ -258,12 +258,12 @@ public static class UpgradeStandSpawner
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo($"[UpgradeStandSpawner] Vanilla upgrade slot scan: all={allUpgradeSources.Count}, accepted={sources.Count}, original={GetTransformPath(originalStand.transform)}.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Vanilla upgrade slot scan: all={allUpgradeSources.Count}, accepted={sources.Count}, original={GetTransformPath(originalStand.transform)}.");
 
             foreach (UpgradeVolumeSource source in allUpgradeSources.OrderBy(s => s.Distance).Take(24))
             {
                 bool accepted = IsLikelyOriginalUpgradeSlot(source);
-                Plugin.Log.LogInfo($"[UpgradeStandSpawner] Vanilla upgrade slot candidate: accepted={accepted}, distance={source.Distance:F2}, local={source.LocalPosition}, path={source.Path}");
+                if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Vanilla upgrade slot candidate: accepted={accepted}, distance={source.Distance:F2}, local={source.LocalPosition}, path={source.Path}");
             }
         }
 
@@ -308,7 +308,7 @@ public static class UpgradeStandSpawner
                 Plugin.Log.LogInfo($"[UpgradeStandSpawner] Copied vanilla upgrade slot {i + 1}: source={source.Path}, local={source.LocalPosition}, yaw={source.LocalRotation.eulerAngles.y:F1}");
         }
 
-        Plugin.Log.LogInfo($"[UpgradeStandSpawner] Copied {created.Count} vanilla upgrade ItemVolume(s) for passive stand.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Copied {created.Count} vanilla upgrade ItemVolume(s) for passive stand.");
         return created
             .OrderByDescending(v => v.transform.localPosition.y)
             .ThenBy(v => v.transform.localPosition.x)
@@ -427,7 +427,7 @@ public static class UpgradeStandSpawner
         if (pv != null) Object.Destroy(pv);
 
         _prefabPrepared = true;
-        Plugin.Log.LogInfo("[UpgradeStandSpawner] Upgrade stand prefab prepared.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo("[UpgradeStandSpawner] Upgrade stand prefab prepared.");
         return true;
     }
 

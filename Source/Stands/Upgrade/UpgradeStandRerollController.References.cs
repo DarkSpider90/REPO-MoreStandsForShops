@@ -25,7 +25,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.References] Resolved. " +
                 $"button={NameOrNull(buttonRoot)}, " +
                 $"buttonCollider={NameOrNull(buttonColliderRoot)}, " +
@@ -86,7 +86,7 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
         {
-            Plugin.Log.LogInfo(
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.References] Disabled vanilla button networking. " +
                 $"grabAreas={grabAreaCount}, staticGrabs={staticGrabCount}, photonViews={photonViewCount}.");
         }
