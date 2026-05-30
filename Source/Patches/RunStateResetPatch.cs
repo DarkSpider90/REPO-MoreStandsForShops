@@ -1,31 +1,32 @@
 using HarmonyLib;
 using MoreStandsForShops.Network;
 using MoreStandsForShops.Shop;
-using Photon.Pun;
 
 namespace MoreStandsForShops.Patches;
 
-/// <summary>
-/// Сбрасывает состояния между сессиями при выходе из комнаты.
-/// Предотвращает застревание _isApplying=true в ClientShopLayoutApplier
-/// и повторный вызов EnsureItemSpawnChanceConfigs каждый магазин.
-/// </summary>
-[HarmonyPatch(typeof(GameDirector))]
+[HarmonyPatch(typeof(RunManager))]
 internal static class RunStateResetPatch
 {
     [HarmonyPostfix]
-    [HarmonyPatch("ReturnToMainMenu")]
-    private static void ReturnToMainMenuPostfix()
+    [HarmonyPatch(nameof(RunManager.ChangeLevel))]
+    private static void ChangeLevelPostfix()
     {
-        ResetSessionState();
+        ResetSessionState("level change");
     }
 
-    private static void ResetSessionState()
+    [HarmonyPostfix]
+    [HarmonyPatch(nameof(RunManager.LeaveToMainMenu))]
+    private static void LeaveToMainMenuPostfix()
+    {
+        ResetSessionState("leave to main menu");
+    }
+
+    private static void ResetSessionState(string reason)
     {
         ClientShopLayoutApplier.Reset();
         ShopItemLimitPlanner.ResetForSession();
 
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo("[RunStateResetPatch] Session state reset on return to main menu.");
+            Plugin.Log.LogInfo($"[RunStateResetPatch] Session state reset on {reason}.");
     }
 }

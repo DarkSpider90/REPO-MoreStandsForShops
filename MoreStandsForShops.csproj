@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Source_OLD\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- BepInEx and Harmony from BepInEx/core -->
     <Reference Include="BepInEx">
       <HintPath>D:\Games\Steam\steamapps\common\REPO\BepInEx\core\BepInEx.dll</HintPath>

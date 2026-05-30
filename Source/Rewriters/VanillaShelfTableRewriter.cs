@@ -192,16 +192,12 @@ internal static class VanillaShelfTableRewriter
 
     private static IEnumerable<ItemVolume> FindActiveVanillaTableVolumes()
     {
-        Transform itemStandsRoot = FindItemStandsRoot();
-        if (itemStandsRoot == null)
-            return Enumerable.Empty<ItemVolume>();
-
-        return itemStandsRoot
-            .GetComponentsInChildren<ItemVolume>(true)
+        return Resources.FindObjectsOfTypeAll<ItemVolume>()
             .Where(volume => volume != null && volume.gameObject.activeInHierarchy)
             .Where(volume => !volume.name.StartsWith("MoreStandsForShops", StringComparison.OrdinalIgnoreCase))
             .Where(volume => volume.GetComponent<MoreStandsMultiSizeVolume>() == null)
-            .Where(volume => IsTableVolumeType(volume.itemVolume));
+            .Where(volume => IsTableVolumeType(volume.itemVolume))
+            .Where(volume => GetTransformPath(volume.transform).IndexOf("/ITEM STANDS/ITEMS/", StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     private static bool IsTableVolumeType(SemiFunc.itemVolume itemVolume)
@@ -339,34 +335,10 @@ internal static class VanillaShelfTableRewriter
 
     private static IEnumerable<Transform> FindItemStandRoots(string exactName)
     {
-        Transform itemStandsRoot = FindItemStandsRoot();
-        if (itemStandsRoot == null)
-            return Enumerable.Empty<Transform>();
-
-        return itemStandsRoot
-            .GetComponentsInChildren<Transform>(true)
+        return Resources.FindObjectsOfTypeAll<Transform>()
             .Where(transform => transform != null && transform.gameObject.activeInHierarchy)
-            .Where(transform => string.Equals(transform.name, exactName, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static Transform FindItemStandsRoot()
-    {
-        if (ShopManager.instance?.itemVolumes == null)
-            return null;
-
-        foreach (ItemVolume volume in ShopManager.instance.itemVolumes)
-        {
-            Transform current = volume == null ? null : volume.transform;
-            while (current != null)
-            {
-                if (string.Equals(current.name, "ITEM STANDS", StringComparison.OrdinalIgnoreCase))
-                    return current;
-
-                current = current.parent;
-            }
-        }
-
-        return null;
+            .Where(transform => string.Equals(transform.name, exactName, StringComparison.OrdinalIgnoreCase))
+            .Where(transform => GetTransformPath(transform).IndexOf("/ITEM STANDS/", StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     private static string GetTransformPath(Transform transform)
