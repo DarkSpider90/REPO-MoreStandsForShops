@@ -1,6 +1,7 @@
 using HarmonyLib;
 using MoreStandsForShops.Network;
 using MoreStandsForShops.Shop;
+using MoreStandsForShops.Utilities;
 
 namespace MoreStandsForShops.Patches;
 
@@ -25,6 +26,7 @@ internal static class RunStateResetPatch
     {
         ClientShopLayoutApplier.Reset();
         ShopItemLimitPlanner.ResetForSession();
+        ShopSceneCache.Clear();
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo($"[RunStateResetPatch] Session state reset on {reason}.");

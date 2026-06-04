@@ -3,7 +3,6 @@ using System.Linq;
 using MoreStandsForShops.Network;
 using MoreStandsForShops.Utilities;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace MoreStandsForShops.Spawners;
 
@@ -163,7 +162,7 @@ public static class DroneCrystalStandSpawner
 
     private static GameObject FindExistingSpawnedStand()
     {
-        return Resources.FindObjectsOfTypeAll<Transform>()
+        return ShopSceneCache.Current.Transforms
             .Where(t => t != null && t.gameObject.activeInHierarchy)
             .Where(t => t.name.StartsWith("MoreStandsForShops Drone Crystal Stand", System.StringComparison.OrdinalIgnoreCase))
             .Select(t => t.gameObject)
@@ -207,7 +206,7 @@ public static class DroneCrystalStandSpawner
             }
         }
 
-        return Resources.FindObjectsOfTypeAll<Transform>()
+        return ShopSceneCache.Current.Transforms
             .Where(t => t != null && t.gameObject.activeInHierarchy)
             .Where(t => string.Equals(t.name, "valuable shelf short (1)", System.StringComparison.OrdinalIgnoreCase))
             .Where(t => GetTransformPath(t).IndexOf("/ITEM STANDS/", System.StringComparison.OrdinalIgnoreCase) >= 0)
@@ -352,31 +351,11 @@ public static class DroneCrystalStandSpawner
 
     private static Transform FindTransformByPath(string path)
     {
-        foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
-        {
-            Transform result = root.transform.Find(path);
-            if (result != null) return result;
-
-            if (root.name == path.Split('/')[0])
-            {
-                string subPath = path.Substring(path.IndexOf('/') + 1);
-                result = root.transform.Find(subPath);
-                if (result != null) return result;
-            }
-        }
-        return null;
+        return ScenePathUtility.FindTransformByPath(path);
     }
 
     private static string GetTransformPath(Transform t)
     {
-        if (t == null) return "<null>";
-        var stack = new System.Collections.Generic.Stack<string>();
-        var current = t;
-        while (current != null)
-        {
-            stack.Push(current.name);
-            current = current.parent;
-        }
-        return string.Join("/", stack);
+        return ShopSceneCache.Current.GetTransformPath(t);
     }
 }

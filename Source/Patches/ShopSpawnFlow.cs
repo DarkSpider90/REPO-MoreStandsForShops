@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MoreStandsForShops.Shop;
+using MoreStandsForShops.Utilities;
 
 namespace MoreStandsForShops.Patches;
 
@@ -9,6 +10,7 @@ internal static class ShopSpawnFlow
 
     internal static void ResetForShop()
     {
+        ShopSceneCache.Rebuild();
         ShelfSpawnController.ResetForShop();
         MultiSizeSlotController.ResetForShop();
     }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MoreStandsForShops.Network;
@@ -12,6 +13,7 @@ public static class UpgradeStandSpawner
 {
     private static GameObject _cachedPrefab;
     private static bool _prefabPrepared;
+    private static readonly RaycastHit[] WallHits = new RaycastHit[16];
 
 
     public static bool EnsurePrefabPrepared()
@@ -45,10 +47,13 @@ public static class UpgradeStandSpawner
                 return false;
         }
 
-        // Try each spawn point until one succeeds
+        bool protectPaintingObjects = IsPaintingSecretShopPresent();
+
+        // Try each spawn point for the active main shop module until one succeeds.
         var points = CleanPresetDatabase.GetSpawnPoints()
             .OrderByDescending(point => point.SourceCount)
             .ToList();
+
         foreach (var point in points)
         {
             // Find main module by full path from root
@@ -60,17 +65,6 @@ public static class UpgradeStandSpawner
                 continue;
             }
 
-            bool gamblingCompatibility = IsGamblingModulePresent();
-            if (!string.IsNullOrEmpty(point.ExtraModule) && !IsModulePresent(point.ExtraModule) && !gamblingCompatibility)
-            {
-                if (Plugin.DebugLogs.Value)
-                    Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' skipped: extra module '{point.ExtraModule}' not present.");
-                continue;
-            }
-
-            if (gamblingCompatibility && !string.IsNullOrEmpty(point.ExtraModule) && Plugin.DebugLogs.Value)
-                if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' allowed by gambling shop module compatibility.");
-
             // Calculate world position and rotation
             Vector3 position = module.TransformPoint(point.LocalPosition);
             Quaternion rotation = module.rotation * Quaternion.Euler(0f, point.LocalYaw, 0f);
@@ -79,7 +73,7 @@ public static class UpgradeStandSpawner
             if (!IsAgainstWall(position, rotation))
             {
                 if (Plugin.DebugLogs.Value)
-                    Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' rejected: no wall within 0.5m. local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, sourceCount={point.SourceCount}.");
+                    Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' rejected: no back wall within 0.5m. local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, sourceCount={point.SourceCount}.");
                 continue;
             }
 
@@ -91,7 +85,7 @@ public static class UpgradeStandSpawner
             }
 
             // Check for protected objects
-            if (HasProtectedOverlap(position, rotation, out string protectedObj))
+            if (HasProtectedOverlap(position, rotation, protectPaintingObjects, out string protectedObj))
             {
                 if (Plugin.DebugLogs.Value)
                     Plugin.Log.LogInfo($"[UpgradeStandSpawner] Variant '{point.VariantId}' rejected: protected overlap '{protectedObj}'. local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, sourceCount={point.SourceCount}.");
@@ -126,7 +120,10 @@ public static class UpgradeStandSpawner
                             : 14
                 });
 
-            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Successfully spawned additional upgrade stand: variant={point.VariantId}, sourceCount={point.SourceCount}, main={point.MainModule}, extra={point.ExtraModule ?? "<fallback>"}, local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}.");
+            if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Successfully spawned additional upgrade stand: variant={point.VariantId}, sourceCount={point.SourceCount}, main={point.MainModule}, local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}, protectPainting={protectPaintingObjects}.");
+            SchedulePresetBlockerRecheck(point.DisablePaths, "[UpgradeStandSpawner:Delayed]");
+            ScheduleMagazineDisplayRecheck(position, rotation);
+            ScheduleCartOverlapRecheck(position, rotation);
             return true;
         }
 
@@ -157,7 +154,98 @@ public static class UpgradeStandSpawner
         DisableItemVolumes(spawnedStand);
 
         if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Network visual spawned: id={spawnId}, variant={variantId}, parent={parentPath}.");
+        SchedulePresetBlockerRecheck(disabledPaths, "[UpgradeStandSpawner:NetworkDelayed]");
+        ScheduleMagazineDisplayRecheck(position, rotation);
         return true;
+    }
+
+    private static void SchedulePresetBlockerRecheck(IEnumerable<string> paths, string logPrefix)
+    {
+        if (Plugin.Instance == null || paths == null)
+            return;
+
+        string[] capturedPaths = paths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct()
+            .ToArray();
+
+        if (capturedPaths.Length == 0)
+            return;
+
+        Plugin.Instance.StartCoroutine(RecheckPresetBlockersRoutine(capturedPaths, logPrefix));
+    }
+
+    private static IEnumerator RecheckPresetBlockersRoutine(string[] paths, string logPrefix)
+    {
+        yield return new WaitForSeconds(0.25f);
+        ScenePathUtility.DisableExactPaths(paths, logPrefix);
+
+        yield return new WaitForSeconds(1f);
+        ScenePathUtility.DisableExactPaths(paths, logPrefix);
+    }
+
+    private static void ScheduleMagazineDisplayRecheck(Vector3 position, Quaternion rotation)
+    {
+        if (Plugin.Instance == null)
+            return;
+
+        Plugin.Instance.StartCoroutine(RecheckMagazineDisplaysRoutine(position, rotation));
+    }
+
+    private static IEnumerator RecheckMagazineDisplaysRoutine(Vector3 position, Quaternion rotation)
+    {
+        yield return new WaitForSeconds(0.25f);
+        DisableMagazineDisplaysAt(position, rotation);
+
+        yield return new WaitForSeconds(1f);
+        DisableMagazineDisplaysAt(position, rotation);
+    }
+
+    private static void DisableMagazineDisplaysAt(Vector3 position, Quaternion rotation)
+    {
+        Vector3 halfExtents = new(1.15f, 1.15f, 0.75f);
+        Vector3 center = position + Vector3.up * halfExtents.y;
+        var disabledTargets = new HashSet<Transform>();
+        var disabledPaths = new List<string>();
+        DisableMagazineDisplaysInsideStand(BuildMagazineCleanupBounds(center, halfExtents, rotation), disabledTargets, disabledPaths);
+    }
+
+    private static void ScheduleCartOverlapRecheck(Vector3 position, Quaternion rotation)
+    {
+        if (Plugin.Instance == null || !SemiFunc.IsMasterClientOrSingleplayer())
+            return;
+
+        Plugin.Instance.StartCoroutine(RecheckCartOverlapsRoutine(position, rotation));
+    }
+
+    public static void SchedulePostPopulateCartOverlapRecheck()
+    {
+        if (Plugin.Instance == null || !SemiFunc.IsMasterClientOrSingleplayer())
+            return;
+
+        GameObject stand = FindExistingSpawnedStand();
+        if (stand == null)
+            return;
+
+        Plugin.Instance.StartCoroutine(RecheckCartOverlapsRoutine(stand.transform.position, stand.transform.rotation));
+    }
+
+    private static IEnumerator RecheckCartOverlapsRoutine(Vector3 position, Quaternion rotation)
+    {
+        yield return new WaitForSeconds(0.25f);
+        MoveCartOverlaps(position, rotation);
+
+        yield return new WaitForSeconds(1f);
+        MoveCartOverlaps(position, rotation);
+
+        yield return new WaitForSeconds(2f);
+        MoveCartOverlaps(position, rotation);
+
+        yield return new WaitForSeconds(4f);
+        MoveCartOverlaps(position, rotation);
+
+        yield return new WaitForSeconds(7f);
+        MoveCartOverlaps(position, rotation);
     }
 
 
@@ -318,7 +406,7 @@ public static class UpgradeStandSpawner
 
     private static IEnumerable<UpgradeVolumeSource> FindAllVanillaUpgradeVolumeSources(Transform originalStand)
     {
-        return Resources.FindObjectsOfTypeAll<ItemVolume>()
+        return ShopSceneCache.Current.ItemVolumes
             .Where(v => v != null)
             .Where(v => v.gameObject.activeInHierarchy)
             .Where(v => v.itemVolume == SemiFunc.itemVolume.upgrade)
@@ -446,61 +534,46 @@ public static class UpgradeStandSpawner
 
     private static UpgradeStand FindOriginalUpgradeStand()
     {
-        return Resources.FindObjectsOfTypeAll<UpgradeStand>()
-            .FirstOrDefault(s => s.gameObject.activeInHierarchy && 
+        return ShopSceneCache.Current.Transforms
+            .Select(t => t == null ? null : t.GetComponent<UpgradeStand>())
+            .FirstOrDefault(s => s != null &&
+                                 s.gameObject.activeInHierarchy &&
                                  !s.name.StartsWith("MoreStandsForShops", System.StringComparison.OrdinalIgnoreCase) &&
                                  !s.name.StartsWith("ExtraItemsShop", System.StringComparison.OrdinalIgnoreCase));
     }
 
 
-    private static bool IsModulePresent(string moduleName)
+    private static bool IsPaintingSecretShopPresent()
     {
-        return Resources.FindObjectsOfTypeAll<Transform>()
-            .Any(t => t != null && t.gameObject.activeInHierarchy && t.name == moduleName);
-    }
-
-    private static bool IsGamblingModulePresent()
-    {
-        return Resources.FindObjectsOfTypeAll<Transform>()
-            .Any(t =>
-            {
-                if (t == null || !t.gameObject.activeInHierarchy)
-                    return false;
-
-                string name = t.name.ToLowerInvariant();
-                return name.Contains("module - shop - de - gambling room") ||
-                       name.Contains("module - shop - de - solo slot") ||
-                       name.Contains("module - shop - de - solo wheel");
-            });
+        return ShopSceneCache.Current.Transforms.Any(t =>
+            t != null &&
+            t.gameObject.activeInHierarchy &&
+            t.name == "Module - Shop - DE - Painting Secret Shop(Clone)");
     }
 
 
     private static bool IsAgainstWall(Vector3 position, Quaternion rotation)
     {
-        Vector3[] directions =
-        {
-            rotation * Vector3.forward,
-            rotation * Vector3.back,
-            rotation * Vector3.right,
-            rotation * Vector3.left
-        };
-
+        Vector3 direction = rotation * Vector3.back;
         float maxWallDistance = 0.5f;
-        LayerMask wallMask = LayerMask.GetMask("Default");
+        Vector3 origin = position + Vector3.up * 0.5f;
 
-        foreach (Vector3 dir in directions)
+        int hitCount = Physics.RaycastNonAlloc(origin, direction, WallHits, maxWallDistance, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hitCount; i++)
         {
-            if (Physics.Raycast(position + Vector3.up * 0.5f, dir, out RaycastHit hit, 2f, wallMask, QueryTriggerInteraction.Ignore))
-            {
-                if (Mathf.Abs(hit.normal.y) < 0.1f && hit.distance <= maxWallDistance)
-                    return true;
-            }
+            RaycastHit hit = WallHits[i];
+            if (hit.transform == null)
+                continue;
+
+            if (Mathf.Abs(hit.normal.y) < 0.1f && IsStructuralShopSurface(GetTransformPath(hit.transform).ToLowerInvariant()))
+                return true;
         }
+
         return false;
     }
 
 
-    private static bool HasProtectedOverlap(Vector3 position, Quaternion rotation, out string objectName)
+    private static bool HasProtectedOverlap(Vector3 position, Quaternion rotation, bool protectPaintingObjects, out string objectName)
     {
         objectName = null;
         Vector3 halfExtents = new(0.85f, 1.10f, 0.55f);
@@ -520,7 +593,7 @@ public static class UpgradeStandSpawner
                 continue;
 
             // Check if protected
-            if (IsProtected(col.transform))
+            if (IsProtected(col.transform, protectPaintingObjects))
             {
                 objectName = col.transform.name;
                 return true;
@@ -534,7 +607,7 @@ public static class UpgradeStandSpawner
                 continue;
         }
 
-        foreach (Renderer renderer in Resources.FindObjectsOfTypeAll<Renderer>())
+        foreach (Renderer renderer in ShopSceneCache.Current.Renderers)
         {
             if (renderer == null || !renderer.gameObject.activeInHierarchy)
                 continue;
@@ -545,7 +618,7 @@ public static class UpgradeStandSpawner
             if (rendererTransform.name.StartsWith("ExtraItemsShop", System.StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            if (!IsProtected(rendererTransform))
+            if (!IsProtected(rendererTransform, protectPaintingObjects))
                 continue;
 
             if (renderer.bounds.Intersects(standBounds))
@@ -561,6 +634,11 @@ public static class UpgradeStandSpawner
 
     private static bool IsProtected(Transform t)
     {
+        return IsProtected(t, IsPaintingSecretShopPresent());
+    }
+
+    private static bool IsProtected(Transform t, bool protectPaintingObjects)
+    {
         string path = GetTransformPath(t).ToLowerInvariant();
         string[] protectedFragments =
         {
@@ -568,8 +646,11 @@ public static class UpgradeStandSpawner
             "upgrade stand", "health stand", "revive stand", "battery upgrade stand",
             "item stands", "valuable shelf", "weapon stand", "weapon shelf",
             "extraction", "truck",
-            "door", "painting", "secret", "hidden", "passage", "entrance"
+            "door", "secret", "hidden", "passage", "entrance"
         };
+
+        if (protectPaintingObjects && path.Contains("painting"))
+            return true;
 
         foreach (string frag in protectedFragments)
         {
@@ -615,11 +696,14 @@ public static class UpgradeStandSpawner
 
     private static List<string> DisableMovableOverlaps(Vector3 position, Quaternion rotation)
     {
+        bool protectPaintingObjects = IsPaintingSecretShopPresent();
         Vector3 halfExtents = new(1.15f, 1.15f, 0.75f);
         Vector3 center = position + Vector3.up * halfExtents.y;
         Bounds standBounds = BuildWorldBounds(center, halfExtents, rotation, 0.03f);
         HashSet<Transform> disabledTargets = new();
         var disabledPaths = new List<string>();
+
+        MoveCartOverlaps(position, rotation);
 
         Collider[] overlaps = Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in overlaps)
@@ -630,14 +714,14 @@ public static class UpgradeStandSpawner
 
             string path = GetTransformPath(col.transform).ToLowerInvariant();
             if (!IsShopModulePath(path)) continue;
-            if (IsProtected(col.transform)) continue;
+            if (IsProtected(col.transform, protectPaintingObjects)) continue;
             if (IsStructuralShopSurface(path)) continue;
 
             Transform disableTarget = FindDecorativeDisableRoot(col.transform);
-            TryDisableDecorativeTarget(disableTarget, disabledTargets, disabledPaths, "collider");
+            TryDisableDecorativeTarget(disableTarget, disabledTargets, disabledPaths, "collider", protectPaintingObjects);
         }
 
-        foreach (Renderer renderer in Resources.FindObjectsOfTypeAll<Renderer>())
+        foreach (Renderer renderer in ShopSceneCache.Current.Renderers)
         {
             if (renderer == null || !renderer.gameObject.activeInHierarchy)
                 continue;
@@ -649,19 +733,247 @@ public static class UpgradeStandSpawner
 
             string path = GetTransformPath(rendererTransform).ToLowerInvariant();
             if (!IsShopModulePath(path)) continue;
-            if (IsProtected(rendererTransform)) continue;
+            if (IsProtected(rendererTransform, protectPaintingObjects)) continue;
             if (IsStructuralShopSurface(path)) continue;
             if (path.Contains("collider") || path.Contains("trigger")) continue;
 
             Transform disableTarget = FindDecorativeDisableRoot(rendererTransform);
-            TryDisableDecorativeTarget(disableTarget, disabledTargets, disabledPaths, "renderer");
+            TryDisableDecorativeTarget(disableTarget, disabledTargets, disabledPaths, "renderer", protectPaintingObjects);
         }
+
+        DisableMagazineDisplaysInsideStand(BuildMagazineCleanupBounds(center, halfExtents, rotation), disabledTargets, disabledPaths);
 
         return disabledPaths;
     }
 
+    private static int MoveCartOverlaps(Vector3 position, Quaternion rotation)
+    {
+        Vector3 halfExtents = new(1.20f, 1.15f, 0.85f);
+        Vector3 center = position + Vector3.up * halfExtents.y;
+        Bounds standBounds = BuildWorldBounds(center, halfExtents, rotation, 0.05f);
+        Vector3 moveDirection = GetStandForward(rotation);
+        HashSet<Transform> movedTargets = new();
 
-    private static bool TryDisableDecorativeTarget(Transform disableTarget, HashSet<Transform> disabledTargets, List<string> disabledPaths, string reason)
+        Collider[] overlaps = Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore);
+        foreach (Collider col in overlaps)
+        {
+            if (col == null || col.transform == null)
+                continue;
+
+            Transform moveTarget = FindCartMoveRoot(col.transform);
+            if (moveTarget == null || movedTargets.Contains(moveTarget))
+                continue;
+
+            if (!TryGetCombinedObjectBounds(moveTarget, out Bounds cartBounds) || !cartBounds.Intersects(standBounds))
+                continue;
+
+            Vector3 moveOffset = CalculateCartMoveOffset(standBounds, cartBounds, moveDirection);
+            MoveCartTarget(moveTarget, moveOffset, movedTargets);
+        }
+
+        return movedTargets.Count;
+    }
+
+    private static Vector3 CalculateCartMoveOffset(Bounds standBounds, Bounds cartBounds, Vector3 moveDirection)
+    {
+        float standHalfAlongMove = ProjectBoundsHalfExtent(standBounds, moveDirection);
+        float cartHalfAlongMove = ProjectBoundsHalfExtent(cartBounds, moveDirection);
+        float currentDistance = Vector3.Dot(cartBounds.center - standBounds.center, moveDirection);
+        float targetDistance = standHalfAlongMove + cartHalfAlongMove + 0.35f;
+        float moveDistance = Mathf.Max(1f, targetDistance - currentDistance);
+
+        return moveDirection * moveDistance;
+    }
+
+    private static float ProjectBoundsHalfExtent(Bounds bounds, Vector3 axis)
+    {
+        Vector3 absAxis = new(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z));
+        return Vector3.Dot(bounds.extents, absAxis);
+    }
+
+    private static Vector3 GetStandForward(Quaternion rotation)
+    {
+        Vector3 forward = Vector3.ProjectOnPlane(rotation * Vector3.forward, Vector3.up);
+        return forward.sqrMagnitude > 0.001f ? forward.normalized : Vector3.forward;
+    }
+
+    private static Transform FindCartMoveRoot(Transform transform)
+    {
+        if (transform == null)
+            return null;
+
+        ItemAttributes attributes = transform.GetComponentInParent<ItemAttributes>();
+        if (attributes != null && IsMovableCartItem(attributes.item))
+            return attributes.transform;
+
+        return FindNamedCartAncestor(transform);
+    }
+
+    private static Transform FindNamedCartAncestor(Transform transform)
+    {
+        Transform current = transform;
+        while (current != null)
+        {
+            string name = current.name.ToLowerInvariant();
+            if (IsMovableCartName(name))
+                return current;
+
+            current = current.parent;
+        }
+
+        return null;
+    }
+
+    private static bool IsMovableCartItem(Item item)
+    {
+        if (item == null)
+            return false;
+
+        if (item.itemType == SemiFunc.itemType.cart || item.itemType == SemiFunc.itemType.pocket_cart)
+            return true;
+
+        return IsMovableCartName(item.name.ToLowerInvariant());
+    }
+
+    private static bool IsMovableCartName(string name)
+    {
+        return name.Contains("item cart medium") ||
+               name.Contains("item cart small") ||
+               name.Contains("item cart large") ||
+               name.Contains("cart medium") ||
+               name.Contains("cart small") ||
+               name.Contains("c.a.r.t.") ||
+               name.Contains("pocket c.a.r.t") ||
+               name.Contains("pocket cart");
+    }
+
+    private static void MoveCartTarget(Transform moveTarget, Vector3 moveOffset, HashSet<Transform> movedTargets)
+    {
+        if (moveTarget == null)
+            return;
+
+        if (moveTarget.name.StartsWith("MoreStandsForShops", System.StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (moveTarget.GetComponentInParent<UpgradeStand>(true) != null)
+            return;
+
+        Vector3 oldPosition = moveTarget.position;
+        moveTarget.position = oldPosition + moveOffset;
+
+        foreach (Rigidbody rb in moveTarget.GetComponentsInChildren<Rigidbody>(true))
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.Sleep();
+        }
+
+        Physics.SyncTransforms();
+        movedTargets.Add(moveTarget);
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[UpgradeStandSpawner] Moved cart away from upgrade stand: {GetTransformPath(moveTarget)} {oldPosition} -> {moveTarget.position}");
+    }
+
+    private static void DisableMagazineDisplaysInsideStand(Bounds standBounds, HashSet<Transform> disabledTargets, List<string> disabledPaths)
+    {
+        foreach (Transform transform in ShopSceneCache.Current.Transforms)
+        {
+            if (transform == null || !transform.gameObject.activeInHierarchy)
+                continue;
+
+            string path = GetTransformPath(transform).ToLowerInvariant();
+            if (!IsMagazineDisplayPath(path))
+                continue;
+
+            Transform root = FindMagazineDisplayRoot(transform);
+            if (root == null || disabledTargets.Contains(root))
+                continue;
+
+            if (!TryGetCombinedObjectBounds(root, out Bounds objectBounds))
+                continue;
+
+            if (!objectBounds.Intersects(standBounds))
+                continue;
+
+            TryDisableDecorativeTarget(root, disabledTargets, disabledPaths, "magazine-display");
+        }
+    }
+
+    private static Bounds BuildMagazineCleanupBounds(Vector3 center, Vector3 halfExtents, Quaternion rotation)
+    {
+        Vector3 magazineHalfExtents = new(
+            halfExtents.x + 1.10f,
+            halfExtents.y + 0.35f,
+            halfExtents.z + 0.55f);
+
+        return BuildWorldBounds(center, magazineHalfExtents, rotation, 0.05f);
+    }
+
+    private static bool IsMagazineDisplayPath(string path)
+    {
+        return path.Contains("shop magazine holder") ||
+               path.Contains("shop magazine stand") ||
+               path.Contains("magazines");
+    }
+
+    private static Transform FindMagazineDisplayRoot(Transform transform)
+    {
+        Transform current = transform;
+        while (current != null)
+        {
+            string name = current.name.ToLowerInvariant();
+            if (name.Contains("shop magazine holder") || name.Contains("shop magazine stand"))
+                return current;
+
+            current = current.parent;
+        }
+
+        return FindDecorativeDisableRoot(transform);
+    }
+
+    private static bool TryGetCombinedObjectBounds(Transform root, out Bounds bounds)
+    {
+        bounds = default;
+        bool hasBounds = false;
+
+        foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (renderer == null || !renderer.enabled)
+                continue;
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        foreach (Collider collider in root.GetComponentsInChildren<Collider>(true))
+        {
+            if (collider == null || !collider.enabled)
+                continue;
+
+            if (!hasBounds)
+            {
+                bounds = collider.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(collider.bounds);
+            }
+        }
+
+        return hasBounds;
+    }
+
+
+    private static bool TryDisableDecorativeTarget(Transform disableTarget, HashSet<Transform> disabledTargets, List<string> disabledPaths, string reason, bool protectPaintingObjects = false)
     {
         if (disableTarget == null)
             return false;
@@ -679,13 +991,15 @@ public static class UpgradeStandSpawner
             return false;
 
         string targetPath = GetTransformPath(disableTarget).ToLowerInvariant();
+        bool isMagazineDisplay = reason == "magazine-display" || IsMagazineDisplayPath(targetPath);
+
         if (!IsShopModulePath(targetPath))
             return false;
 
-        if (IsProtected(disableTarget))
+        if (IsProtected(disableTarget, protectPaintingObjects))
             return false;
 
-        if (IsStructuralShopSurface(targetPath))
+        if (!isMagazineDisplay && IsStructuralShopSurface(targetPath))
             return false;
 
         disableTarget.gameObject.SetActive(false);
@@ -771,14 +1085,6 @@ public static class UpgradeStandSpawner
 
     private static string GetTransformPath(Transform t)
     {
-        if (t == null) return "<null>";
-        var stack = new Stack<string>();
-        var current = t;
-        while (current != null)
-        {
-            stack.Push(current.name);
-            current = current.parent;
-        }
-        return string.Join("/", stack);
+        return ShopSceneCache.Current.GetTransformPath(t);
     }
 }

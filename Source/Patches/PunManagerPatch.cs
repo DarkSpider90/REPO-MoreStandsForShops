@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using MoreStandsForShops.Spawners;
 using MoreStandsForShops.Utilities;
 
 namespace MoreStandsForShops.Patches;
@@ -17,6 +18,18 @@ internal static class PunManagerPatch
         }
 
         ShopSpawnFlow.PrepareBeforeVanillaPopulate(__instance);
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch(nameof(PunManager.ShopPopulateItemVolumes))]
+    private static void ShopPopulateItemVolumesPostfix()
+    {
+        if (!Plugin.EnableMod.Value || !SemiFunc.IsMasterClientOrSingleplayer() || !SemiFunc.RunIsShop())
+        {
+            return;
+        }
+
+        UpgradeStandSpawner.SchedulePostPopulateCartOverlapRecheck();
     }
 
 

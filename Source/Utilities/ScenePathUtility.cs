@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace MoreStandsForShops.Utilities;
 
@@ -11,42 +10,12 @@ internal static class ScenePathUtility
         if (string.IsNullOrWhiteSpace(path))
             return null;
 
-        string[] candidates = GetPathCandidates(path);
-        foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
-        {
-            foreach (string candidate in candidates)
-            {
-                Transform result = root.transform.Find(candidate);
-                if (result != null)
-                    return result;
-
-                if (!candidate.StartsWith(root.name + "/", System.StringComparison.Ordinal))
-                    continue;
-
-                string subPath = candidate.Substring(root.name.Length + 1);
-                result = root.transform.Find(subPath);
-                if (result != null)
-                    return result;
-            }
-        }
-
-        return null;
+        return ShopSceneCache.Current.FindTransformByPath(path);
     }
 
     public static string GetTransformPath(Transform transform)
     {
-        if (transform == null)
-            return "<null>";
-
-        var stack = new Stack<string>();
-        Transform current = transform;
-        while (current != null)
-        {
-            stack.Push(current.name);
-            current = current.parent;
-        }
-
-        return string.Join("/", stack);
+        return ShopSceneCache.Current.GetTransformPath(transform);
     }
 
     public static List<string> DisableExactPaths(IEnumerable<string> paths, string logPrefix)
@@ -70,17 +39,37 @@ internal static class ScenePathUtility
                 continue;
             }
 
-            if (!target.gameObject.activeSelf && !target.gameObject.activeInHierarchy)
-                continue;
-
-            target.gameObject.SetActive(false);
-            disabled.Add(GetTransformPath(target));
+            int disabledCount = DisableTree(target, disabled);
 
             if (Plugin.DebugLogs.Value)
-                Plugin.Log.LogInfo($"{logPrefix} Disabled preset blocker: {GetTransformPath(target)}");
+                Plugin.Log.LogInfo($"{logPrefix} Disabled preset blocker: {GetTransformPath(target)} (nodes={disabledCount})");
         }
 
         return disabled;
+    }
+
+    private static int DisableTree(Transform root, List<string> disabled)
+    {
+        if (root == null)
+            return 0;
+
+        Transform[] nodes = root.GetComponentsInChildren<Transform>(true);
+        int count = 0;
+
+        foreach (Transform node in nodes)
+        {
+            if (node == null)
+                continue;
+
+            if (!node.gameObject.activeSelf && !node.gameObject.activeInHierarchy)
+                continue;
+
+            node.gameObject.SetActive(false);
+            disabled.Add(GetTransformPath(node));
+            count++;
+        }
+
+        return count;
     }
 
     public static bool HasActivePath(IEnumerable<string> paths, out string activePath)
@@ -102,12 +91,4 @@ internal static class ScenePathUtility
         return false;
     }
 
-    private static string[] GetPathCandidates(string path)
-    {
-        string normalized = path.Trim().Trim('/');
-        if (normalized.StartsWith("Main/", System.StringComparison.Ordinal))
-            return new[] { normalized, normalized.Substring("Main/".Length) };
-
-        return new[] { normalized };
-    }
 }

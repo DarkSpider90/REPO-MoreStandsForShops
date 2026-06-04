@@ -4,9 +4,9 @@ using UnityEngine;
 namespace MoreStandsForShops;
 
 /// <summary>
-/// Generated deterministic preset database for the additional Upgrade Stand.
-/// Source: BepInEx/RepoShopScanner clean_presets.json + phantom_stand scanner captures.
-/// Nearby scanner objects are reduced to direct stand intersections only.
+/// Deterministic preset database for the additional Upgrade Stand.
+/// Points are stored only by the main shop N-module; extra modules are not used
+/// for placement filtering because these anchors are validated at runtime.
 /// </summary>
 public static class CleanPresetDatabase
 {
@@ -16,73 +16,138 @@ public static class CleanPresetDatabase
     {
         return new List<SpawnPointData>
         {
-            Point("center_extract_attic_above_diner_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Attic above diner(Clone)", 7.04f, 0.03f, -4.983f, 270f, 4, new[] { "phantom_stand_20260515_182502_929_Main_Level_-_Shop_Dead_Forest_Service_Station_2f6e4c4a_008.json", "phantom_stand_20260515_184215_007_Main_Level_-_Shop_Dead_Forest_Service_Station_b6a5adf1_042.json", "phantom_stand_20260515_184642_965_Main_Level_-_Shop_Dead_Forest_Service_Station_6431702b_052.json", "phantom_stand_20260515_190237_371_Main_Level_-_Shop_Dead_Forest_Service_Station_de36c4e5_088.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_bath_attic_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Bath Attic(Clone)", 0.471f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_181730_022_Main_Level_-_Shop_Wasteland_Service_Station_dc12e256_001.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/TOP/Not Connected/Candy Shelf 2", "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/TOP/Not Connected/Shop prop fridge" }, System.Array.Empty<string>()),
-            Point("center_extract_bath_attic_v02", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Bath Attic(Clone)", 7.04f, 0.03f, -5.023f, 270f, 4, new[] { "phantom_stand_20260515_182409_928_Main_Level_-_Shop_Dead_Forest_Service_Station_34ae2ed6_007.json", "phantom_stand_20260515_182633_486_Main_Level_-_Shop_Dead_Forest_Service_Station_44397040_011.json", "phantom_stand_20260515_182825_822_Main_Level_-_Shop_Dead_Forest_Service_Station_15b14ab4_015.json", "phantom_stand_20260515_183805_479_Main_Level_-_Shop_Dead_Forest_Service_Station_c6863f9f_035.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_bunker_2_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Bunker 2(Clone)", 7.04f, 0.03f, -4.645f, 270f, 4, new[] { "phantom_stand_20260515_183418_452_Main_Level_-_Shop_Dead_Forest_Service_Station_2eaaee2b_027.json", "phantom_stand_20260515_183900_135_Main_Level_-_Shop_Dead_Forest_Service_Station_d628ca88_037.json", "phantom_stand_20260515_184504_935_Main_Level_-_Shop_Dead_Forest_Service_Station_abc75e1c_049.json", "phantom_stand_20260515_184734_339_Main_Level_-_Shop_Dead_Forest_Service_Station_9bb4a9b1_054.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("center_extract_bunker_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Bunker(Clone)", 7.04f, 0.03f, -5.03f, 270f, 4, new[] { "phantom_stand_20260515_181907_774_Main_Level_-_Shop_Dead_Forest_Service_Station_7243f0d2_002.json", "phantom_stand_20260515_183150_515_Main_Level_-_Shop_Dead_Forest_Service_Station_c7292519_022.json", "phantom_stand_20260515_185625_320_Main_Level_-_Shop_Dead_Forest_Service_Station_85e13b77_073.json", "phantom_stand_20260515_190213_738_Main_Level_-_Shop_Dead_Forest_Service_Station_f459f4c6_087.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_car_service_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Car Service(Clone)", 7.04f, 0.03f, -4.983f, 270f, 2, new[] { "phantom_stand_20260515_183346_495_Main_Level_-_Shop_Dead_Forest_Service_Station_6b58f51d_026.json", "phantom_stand_20260515_184419_583_Main_Level_-_Shop_Dead_Forest_Service_Station_a49563e0_047.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_diner_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Diner(Clone)", 7.04f, 0.03f, -5.062f, 270f, 3, new[] { "phantom_stand_20260515_180858_241_Main_Level_-_Shop_Dead_Forest_Service_Station_6013217c_005.json", "phantom_stand_20260515_183547_815_Main_Level_-_Shop_Dead_Forest_Service_Station_7b3b3486_030.json", "phantom_stand_20260515_190101_470_Main_Level_-_Shop_Dead_Forest_Service_Station_631cb4e5_084.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_drink_machines_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Drink Machines(Clone)", 7.04f, 0.03f, -4.939f, 270f, 4, new[] { "phantom_stand_20260515_183056_770_Main_Level_-_Shop_Dead_Forest_Service_Station_0663adfb_020.json", "phantom_stand_20260515_184122_362_Main_Level_-_Shop_Dead_Forest_Service_Station_092b2c5a_040.json", "phantom_stand_20260515_184352_111_Main_Level_-_Shop_Dead_Forest_Service_Station_68f42b1e_046.json", "phantom_stand_20260515_190501_684_Main_Level_-_Shop_Dead_Forest_Service_Station_b423febf_093.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("center_extract_painting_secret_shop_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Painting Secret Shop(Clone)", 7.04f, 0.03f, -5.096f, 270f, 3, new[] { "phantom_stand_20260515_182702_912_Main_Level_-_Shop_Dead_Forest_Service_Station_8f134d0e_012.json", "phantom_stand_20260515_183314_160_Main_Level_-_Shop_Dead_Forest_Service_Station_79124a88_025.json", "phantom_stand_20260515_184241_617_Main_Level_-_Shop_Dead_Forest_Service_Station_b983512f_043.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_upper_office_v01", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Upper Office(Clone)", 7.04f, 0.03f, -5.075f, 270f, 6, new[] { "phantom_stand_20260515_182607_744_Main_Level_-_Shop_Dead_Forest_Service_Station_1eb74666_010.json", "phantom_stand_20260515_182724_662_Main_Level_-_Shop_Dead_Forest_Service_Station_f390cf6a_013.json", "phantom_stand_20260515_183128_821_Main_Level_-_Shop_Dead_Forest_Service_Station_735268f5_021.json", "phantom_stand_20260515_184328_538_Main_Level_-_Shop_Dead_Forest_Service_Station_d742c6c3_045.json", "phantom_stand_20260515_185210_154_Main_Level_-_Shop_Dead_Forest_Service_Station_a67db2ca_063.json", "phantom_stand_20260515_185234_188_Main_Level_-_Shop_Dead_Forest_Service_Station_3faddfd7_064.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("center_extract_upper_office_v03", "Module - Shop - N - Center Extract(Clone)", "Module - Shop - DE - Upper Office(Clone)", 7.04f, 0.03f, -1.635f, 270f, 1, new[] { "phantom_stand_20260515_181119_796_Main_Level_-_Shop_Dead_Forest_Service_Station_930f725a_006.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_attic_above_diner_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Attic above diner(Clone)", 0.07f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_184900_555_Main_Level_-_Shop_Dead_Forest_Service_Station_3a1a47d6_057.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_attic_above_diner_v02", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Attic above diner(Clone)", 0.659f, 0.03f, -7.04f, 0f, 1, new[] { "phantom_stand_20260515_202936_412_Main_Level_-_Shop_Dead_Forest_Service_Station_fdf4f583_100.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Candy Shelf 2", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_bath_attic_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Bath Attic(Clone)", 0.054f, 0.03f, 7.04f, 180f, 2, new[] { "phantom_stand_20260515_185601_100_Main_Level_-_Shop_Dead_Forest_Service_Station_bf0c8a7a_072.json", "phantom_stand_20260515_185714_851_Main_Level_-_Shop_Dead_Forest_Service_Station_f38aa5bf_075.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_bunker_2_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Bunker 2(Clone)", 7.04f, 0.03f, -0.682f, 270f, 2, new[] { "phantom_stand_20260515_183712_238_Main_Level_-_Shop_Dead_Forest_Service_Station_01aa7a1e_033.json", "phantom_stand_20260515_190645_240_Main_Level_-_Shop_Dead_Forest_Service_Station_706fb615_096.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("corner_stands_bunker_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Bunker(Clone)", -7.04f, 0.03f, -1.801f, 90f, 1, new[] { "phantom_stand_20260515_184709_302_Main_Level_-_Shop_Dead_Forest_Service_Station_ba3e5725_053.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/LEFT/Not Connected/Shop Ice Cream Freezer (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_bunker_v02", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Bunker(Clone)", -0.07f, 0.03f, 7.04f, 180f, 2, new[] { "phantom_stand_20260515_190127_064_Main_Level_-_Shop_Dead_Forest_Service_Station_a8f398d5_085.json", "phantom_stand_20260515_202721_816_Main_Level_-_Shop_Dead_Forest_Service_Station_6bfe99ef_098.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_bunker_v03", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Bunker(Clone)", 7.04f, 0.03f, -0.599f, 270f, 1, new[] { "phantom_stand_20260515_182117_681_Main_Level_-_Shop_Dead_Forest_Service_Station_2791a031_003.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("corner_stands_car_service_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Car Service(Clone)", -7.04f, 0.03f, -1.868f, 90f, 2, new[] { "phantom_stand_20260515_190436_544_Main_Level_-_Shop_Dead_Forest_Service_Station_48694248_092.json", "phantom_stand_20260515_202850_882_Main_Level_-_Shop_Dead_Forest_Service_Station_e329ed34_099.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/LEFT/Not Connected/Shop Ice Cream Freezer (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_car_service_v02", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Car Service(Clone)", -1.72f, 0.03f, -7.04f, 0f, 1, new[] { "phantom_stand_20260515_181219_422_Main_Level_-_Shop_Dead_Forest_Service_Station_3fc85ac6_007.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (2)" }, System.Array.Empty<string>()),
-            Point("corner_stands_car_service_v03", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Car Service(Clone)", 0.194f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_185007_895_Main_Level_-_Shop_Dead_Forest_Service_Station_c0981eb3_059.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_car_service_v04", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Car Service(Clone)", 0.637f, 0.03f, -7.04f, 0f, 3, new[] { "phantom_stand_20260515_185036_533_Main_Level_-_Shop_Dead_Forest_Service_Station_7e11b3b6_060.json", "phantom_stand_20260515_190528_256_Main_Level_-_Shop_Dead_Forest_Service_Station_a1e8d1bb_094.json", "phantom_stand_20260515_190712_511_Main_Level_-_Shop_Dead_Forest_Service_Station_112a11d8_097.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Candy Shelf 2", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_diner_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Diner(Clone)", -7.04f, 0.03f, -1.923f, 90f, 1, new[] { "phantom_stand_20260515_184540_867_Main_Level_-_Shop_Dead_Forest_Service_Station_407ced30_050.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/LEFT/Not Connected/Shop Ice Cream Freezer (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_diner_v02", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Diner(Clone)", -0.037f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_175845_149_Main_Level_-_Shop_Dead_Forest_Service_Station_0fc9358f_001.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_diner_v03", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Diner(Clone)", 0.617f, 0.03f, -7.04f, 0f, 2, new[] { "phantom_stand_20260515_183251_123_Main_Level_-_Shop_Dead_Forest_Service_Station_993b6df2_024.json", "phantom_stand_20260515_183738_334_Main_Level_-_Shop_Dead_Forest_Service_Station_b9de025e_034.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Candy Shelf 2", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_drink_machines_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Drink Machines(Clone)", -7.04f, 0.03f, -1.783f, 90f, 1, new[] { "phantom_stand_20260515_180715_306_Main_Level_-_Shop_Dead_Forest_Service_Station_08ca172f_003.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/LEFT/Not Connected/Shop Ice Cream Freezer (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_drink_machines_v02", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Drink Machines(Clone)", -0.049f, 0.03f, 7.04f, 180f, 2, new[] { "phantom_stand_20260515_184804_717_Main_Level_-_Shop_Dead_Forest_Service_Station_5c14ead1_055.json", "phantom_stand_20260515_185257_207_Main_Level_-_Shop_Dead_Forest_Service_Station_7289f2f5_065.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("corner_stands_drink_machines_v04", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Drink Machines(Clone)", 0.693f, 0.03f, -7.04f, 0f, 1, new[] { "phantom_stand_20260515_182858_242_Main_Level_-_Shop_Dead_Forest_Service_Station_03e76e7c_016.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Candy Shelf 2", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_drink_machines_v05", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Drink Machines(Clone)", 7.04f, 0.03f, -0.607f, 270f, 1, new[] { "phantom_stand_20260515_184032_232_Main_Level_-_Shop_Dead_Forest_Service_Station_d2da76a9_039.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("corner_stands_painting_secret_shop_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Painting Secret Shop(Clone)", 0.708f, 0.03f, -7.04f, 0f, 1, new[] { "phantom_stand_20260515_184832_434_Main_Level_-_Shop_Dead_Forest_Service_Station_e9913958_056.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Candy Shelf 2", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)" }, System.Array.Empty<string>()),
-            Point("corner_stands_painting_secret_shop_v02", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Painting Secret Shop(Clone)", 7.04f, 0.03f, -1.349f, 270f, 1, new[] { "phantom_stand_20260515_180635_236_Main_Level_-_Shop_Dead_Forest_Service_Station_a0ee5c03_002.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder", "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }, System.Array.Empty<string>()),
-            Point("corner_stands_upper_office_v01", "Module - Shop - N - Corner Stands(Clone)", "Module - Shop - DE - Upper Office(Clone)", 7.04f, 0.03f, -0.508f, 270f, 1, new[] { "phantom_stand_20260515_203258_387_Main_Level_-_Shop_Dead_Forest_Service_Station_82738558_101.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("middle_stands_attic_above_diner_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Attic above diner(Clone)", -5.504f, 0.03f, 7.04f, 180f, 5, new[] { "phantom_stand_20260515_182932_827_Main_Level_-_Shop_Dead_Forest_Service_Station_c2daac94_017.json", "phantom_stand_20260515_183035_856_Main_Level_-_Shop_Dead_Forest_Service_Station_5302a20d_019.json", "phantom_stand_20260515_183833_860_Main_Level_-_Shop_Dead_Forest_Service_Station_2c390d5a_036.json", "phantom_stand_20260515_185104_711_Main_Level_-_Shop_Dead_Forest_Service_Station_299b7490_061.json", "phantom_stand_20260515_185737_257_Main_Level_-_Shop_Dead_Forest_Service_Station_8ddaa9e6_076.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("middle_stands_attic_above_diner_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Attic above diner(Clone)", -0.026f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_184302_714_Main_Level_-_Shop_Dead_Forest_Service_Station_4ee0ed23_044.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_bath_attic_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Bath Attic(Clone)", -7.04f, 0.03f, -0.481f, 90f, 1, new[] { "phantom_stand_20260515_182338_759_Main_Level_-_Shop_Dead_Forest_Service_Station_99d6001f_006.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/LEFT/Not Connected/shop sign ai", "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/LEFT/Not Connected/shop sign hotdog" }, System.Array.Empty<string>()),
-            Point("middle_stands_bath_attic_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Bath Attic(Clone)", 0.051f, 0.03f, 7.04f, 180f, 3, new[] { "phantom_stand_20260515_182800_968_Main_Level_-_Shop_Dead_Forest_Service_Station_4135e0bd_014.json", "phantom_stand_20260515_185347_696_Main_Level_-_Shop_Dead_Forest_Service_Station_83019d4b_067.json", "phantom_stand_20260515_185949_949_Main_Level_-_Shop_Dead_Forest_Service_Station_697d7aeb_081.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_bunker_2_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Bunker 2(Clone)", -0.097f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_182310_252_Main_Level_-_Shop_Dead_Forest_Service_Station_d8df1340_005.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_bunker_2_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Bunker 2(Clone)", 7.04f, 0.03f, -0.614f, 270f, 1, new[] { "phantom_stand_20260515_182154_676_Main_Level_-_Shop_Dead_Forest_Service_Station_5c5f78cb_004.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("middle_stands_bunker_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Bunker(Clone)", -5.386f, 0.03f, 7.04f, 180f, 4, new[] { "phantom_stand_20260515_183224_308_Main_Level_-_Shop_Dead_Forest_Service_Station_7d789857_023.json", "phantom_stand_20260515_185135_824_Main_Level_-_Shop_Dead_Forest_Service_Station_b94b1f20_062.json", "phantom_stand_20260515_185416_518_Main_Level_-_Shop_Dead_Forest_Service_Station_409231fe_068.json", "phantom_stand_20260515_185444_159_Main_Level_-_Shop_Dead_Forest_Service_Station_026de511_069.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_bunker_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Bunker(Clone)", 0.071f, 0.03f, 7.04f, 180f, 3, new[] { "phantom_stand_20260515_183000_943_Main_Level_-_Shop_Dead_Forest_Service_Station_a98fcf7b_018.json", "phantom_stand_20260515_185836_913_Main_Level_-_Shop_Dead_Forest_Service_Station_e852f307_078.json", "phantom_stand_20260515_190328_965_Main_Level_-_Shop_Dead_Forest_Service_Station_88a8c024_090.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_car_service_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Car Service(Clone)", -4.184f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_182542_231_Main_Level_-_Shop_Dead_Forest_Service_Station_12a12c10_009.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/TOP/Connected/Soda Machine (1)" }, System.Array.Empty<string>()),
-            Point("middle_stands_car_service_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Car Service(Clone)", 7.04f, 0.03f, -0.512f, 270f, 1, new[] { "phantom_stand_20260515_190034_916_Main_Level_-_Shop_Dead_Forest_Service_Station_b9680173_083.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("middle_stands_diner_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Diner(Clone)", -5.447f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_190013_810_Main_Level_-_Shop_Dead_Forest_Service_Station_d6eb9da2_082.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_diner_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Diner(Clone)", -0.055f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_183639_432_Main_Level_-_Shop_Dead_Forest_Service_Station_1f6fafa3_032.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_diner_v03", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Diner(Clone)", 7.04f, 0.03f, -0.723f, 270f, 1, new[] { "phantom_stand_20260515_185509_128_Main_Level_-_Shop_Dead_Forest_Service_Station_7d7560f0_070.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>()),
-            Point("middle_stands_drink_machines_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Drink Machines(Clone)", -5.542f, 0.03f, 7.04f, 180f, 2, new[] { "phantom_stand_20260515_181301_789_Main_Level_-_Shop_Dead_Forest_Service_Station_df4c8515_008.json", "phantom_stand_20260515_185531_011_Main_Level_-_Shop_Dead_Forest_Service_Station_adb21f9f_071.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_drink_machines_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Drink Machines(Clone)", 0.185f, 0.03f, 7.04f, 180f, 2, new[] { "phantom_stand_20260515_184439_452_Main_Level_-_Shop_Dead_Forest_Service_Station_a068b0f1_048.json", "phantom_stand_20260515_185649_333_Main_Level_-_Shop_Dead_Forest_Service_Station_cef60f26_074.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_painting_secret_shop_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Painting Secret Shop(Clone)", -7.04f, 0.03f, -1.385f, 90f, 1, new[] { "phantom_stand_20260515_180742_554_Main_Level_-_Shop_Dead_Forest_Service_Station_06d34c6d_004.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/LEFT/Not Connected/shop sign ai" }, System.Array.Empty<string>()),
-            Point("middle_stands_painting_secret_shop_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Painting Secret Shop(Clone)", -0.074f, 0.03f, 7.04f, 180f, 2, new[] { "phantom_stand_20260515_183523_906_Main_Level_-_Shop_Dead_Forest_Service_Station_925c42d9_029.json", "phantom_stand_20260515_185922_390_Main_Level_-_Shop_Dead_Forest_Service_Station_0319f33f_080.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_upper_office_v01", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Upper Office(Clone)", -5.636f, 0.03f, 7.04f, 180f, 1, new[] { "phantom_stand_20260515_190553_354_Main_Level_-_Shop_Dead_Forest_Service_Station_b71c4c04_095.json" }, System.Array.Empty<string>(), System.Array.Empty<string>()),
-            Point("middle_stands_upper_office_v02", "Module - Shop - N - Middle Stands(Clone)", "Module - Shop - DE - Upper Office(Clone)", 7.04f, 0.03f, -0.639f, 270f, 2, new[] { "phantom_stand_20260515_184927_206_Main_Level_-_Shop_Dead_Forest_Service_Station_654562dd_058.json", "phantom_stand_20260515_185902_323_Main_Level_-_Shop_Dead_Forest_Service_Station_f4a8de09_079.json" }, new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }, System.Array.Empty<string>())
+            // Center Extract
+            Point(
+                "center_extract_right_rear",
+                "Module - Shop - N - Center Extract(Clone)",
+                7.04f, 0.03f, -5.075f, 270f, 34,
+                new[] { "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx" }),
+
+            Point(
+                "center_extract_right_mid",
+                "Module - Shop - N - Center Extract(Clone)",
+                7.04f, 0.03f, -1.635f, 270f, 1,
+                System.Array.Empty<string>()),
+
+            Point(
+                "center_extract_top_mid",
+                "Module - Shop - N - Center Extract(Clone)",
+                0.471f, 0.03f, 7.04f, 180f, 1,
+                new[]
+                {
+                    "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/TOP/Not Connected/Candy Shelf 2",
+                    "Main/Level Generator/Level/Module - Shop - N - Center Extract(Clone)/WALLS/TOP/Not Connected/Shop prop fridge"
+                }),
+
+            // Corner Stands
+            Point(
+                "corner_stands_bottom_left",
+                "Module - Shop - N - Corner Stands(Clone)",
+                -1.72f, 0.03f, -7.04f, 0f, 1,
+                new[]
+                {
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer",
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)",
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (2)"
+                }),
+
+            Point(
+                "corner_stands_bottom_mid",
+                "Module - Shop - N - Corner Stands(Clone)",
+                0.637f, 0.03f, -7.04f, 0f, 8,
+                new[]
+                {
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Candy Shelf 2",
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/Shop Ice Cream Freezer",
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/BOT/Not Connected/shop sign tyre (1)"
+                }),
+
+            Point(
+                "corner_stands_left_mid",
+                "Module - Shop - N - Corner Stands(Clone)",
+                -7.04f, 0.03f, -1.868f, 90f, 5,
+                new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/LEFT/Not Connected/Shop Ice Cream Freezer (1)" }),
+
+            Point(
+                "corner_stands_right_secret",
+                "Module - Shop - N - Corner Stands(Clone)",
+                7.04f, 0.03f, -1.349f, 270f, 1,
+                new[]
+                {
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder",
+                    "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/shop sign lynx"
+                }),
+
+            Point(
+                "corner_stands_right_mid",
+                "Module - Shop - N - Corner Stands(Clone)",
+                7.04f, 0.03f, -0.682f, 270f, 5,
+                new[] { "Main/Level Generator/Level/Module - Shop - N - Corner Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }),
+
+            Point(
+                "corner_stands_top_mid",
+                "Module - Shop - N - Corner Stands(Clone)",
+                0.054f, 0.03f, 7.04f, 180f, 9,
+                System.Array.Empty<string>()),
+
+            // Middle Stands
+            Point(
+                "middle_stands_left_secret",
+                "Module - Shop - N - Middle Stands(Clone)",
+                -7.04f, 0.03f, -1.385f, 90f, 1,
+                new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/LEFT/Not Connected/shop sign ai" }),
+
+            Point(
+                "middle_stands_left_mid",
+                "Module - Shop - N - Middle Stands(Clone)",
+                -7.04f, 0.03f, -0.481f, 90f, 1,
+                new[]
+                {
+                    "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/LEFT/Not Connected/shop sign ai",
+                    "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/LEFT/Not Connected/shop sign hotdog"
+                }),
+
+            Point(
+                "middle_stands_right_mid",
+                "Module - Shop - N - Middle Stands(Clone)",
+                7.04f, 0.03f, -0.639f, 270f, 5,
+                new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder" }),
+
+            Point(
+                "middle_stands_top_left",
+                "Module - Shop - N - Middle Stands(Clone)",
+                -5.504f, 0.03f, 7.04f, 180f, 13,
+                new[]
+                {
+                    "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/RIGHT/Not Connected/Shop Magazine Holder",
+                    "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/TOP/Not Connected/Shop Magazine Stand (1)"
+                }),
+
+            Point(
+                "middle_stands_top_car_service",
+                "Module - Shop - N - Middle Stands(Clone)",
+                -4.184f, 0.03f, 7.04f, 180f, 1,
+                new[] { "Main/Level Generator/Level/Module - Shop - N - Middle Stands(Clone)/WALLS/TOP/Connected/Soda Machine (1)" }),
+
+            Point(
+                "middle_stands_top_mid",
+                "Module - Shop - N - Middle Stands(Clone)",
+                0.051f, 0.03f, 7.04f, 180f, 13,
+                System.Array.Empty<string>())
         };
     }
 
-    private static SpawnPointData Point(string id, string mainModule, string extraModule, float x, float y, float z, float yaw, int sourceCount, string[] sourceFiles, string[] disablePaths, string[] rejectIfPresentPaths)
+    private static SpawnPointData Point(string id, string mainModule, float x, float y, float z, float yaw, int sourceCount, string[] disablePaths)
     {
         return new SpawnPointData
         {
             VariantId = id,
             MainModule = LevelPrefix + mainModule,
-            ExtraModule = extraModule,
             LocalPosition = new Vector3(x, y, z),
             LocalYaw = yaw,
             SourceCount = sourceCount,
-            SourceFiles = sourceFiles,
             DisablePaths = disablePaths,
-            RejectIfPresentPaths = rejectIfPresentPaths
+            RejectIfPresentPaths = System.Array.Empty<string>()
         };
     }
 }
@@ -91,14 +156,9 @@ public class SpawnPointData
 {
     public string VariantId { get; set; }
     public string MainModule { get; set; }
-    public string ExtraModule { get; set; }
     public Vector3 LocalPosition { get; set; }
     public float LocalYaw { get; set; }
     public int SourceCount { get; set; }
-    public string[] SourceFiles { get; set; } = System.Array.Empty<string>();
     public string[] DisablePaths { get; set; } = System.Array.Empty<string>();
     public string[] RejectIfPresentPaths { get; set; } = System.Array.Empty<string>();
-    public float PositionTolerance { get; set; } = 0.1f;
-    public float YawTolerance { get; set; } = 5f;
 }
-

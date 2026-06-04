@@ -192,7 +192,9 @@ internal static class VanillaShelfTableRewriter
 
     private static IEnumerable<ItemVolume> FindActiveVanillaTableVolumes()
     {
-        return Resources.FindObjectsOfTypeAll<ItemVolume>()
+        ShopSceneCache cache = ShopSceneCache.Current;
+
+        return cache.ItemVolumes
             .Where(volume => volume != null && volume.gameObject.activeInHierarchy)
             .Where(volume => !volume.name.StartsWith("MoreStandsForShops", StringComparison.OrdinalIgnoreCase))
             .Where(volume => volume.GetComponent<MoreStandsMultiSizeVolume>() == null)
@@ -335,7 +337,9 @@ internal static class VanillaShelfTableRewriter
 
     private static IEnumerable<Transform> FindItemStandRoots(string exactName)
     {
-        return Resources.FindObjectsOfTypeAll<Transform>()
+        ShopSceneCache cache = ShopSceneCache.Current;
+
+        return cache.Transforms
             .Where(transform => transform != null && transform.gameObject.activeInHierarchy)
             .Where(transform => string.Equals(transform.name, exactName, StringComparison.OrdinalIgnoreCase))
             .Where(transform => GetTransformPath(transform).IndexOf("/ITEM STANDS/", StringComparison.OrdinalIgnoreCase) >= 0);
@@ -343,18 +347,7 @@ internal static class VanillaShelfTableRewriter
 
     private static string GetTransformPath(Transform transform)
     {
-        if (transform == null)
-            return "<null>";
-
-        Stack<string> stack = new();
-        Transform current = transform;
-        while (current != null)
-        {
-            stack.Push(current.name);
-            current = current.parent;
-        }
-
-        return string.Join("/", stack);
+        return ShopSceneCache.Current.GetTransformPath(transform);
     }
 
     private static string FormatVector(Vector3 vector)

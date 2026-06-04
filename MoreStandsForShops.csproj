@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Remove="Source_OLD\**\*.cs" />
+    <Compile Remove="dist\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
