@@ -22,14 +22,17 @@ internal sealed class ShopSceneCache
 
         Transforms = Resources.FindObjectsOfTypeAll<Transform>()
             .Where(transform => transform != null && transform.gameObject.activeInHierarchy)
+            .Where(transform => transform.gameObject.scene == scene)
             .ToArray();
 
         ItemVolumes = Resources.FindObjectsOfTypeAll<ItemVolume>()
             .Where(volume => volume != null && volume.gameObject.activeInHierarchy)
+            .Where(volume => volume.gameObject.scene == scene)
             .ToArray();
 
         Renderers = Resources.FindObjectsOfTypeAll<Renderer>()
             .Where(renderer => renderer != null && renderer.gameObject.activeInHierarchy)
+            .Where(renderer => renderer.gameObject.scene == scene)
             .ToArray();
 
         foreach (Transform transform in Transforms)

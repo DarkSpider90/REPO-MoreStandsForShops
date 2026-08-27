@@ -13,6 +13,9 @@ internal static class ShopLayoutSync
     private const string UpgradeRotationKey = "MSFS.Upgrade.Rotation";
     private const string UpgradeParentKey = "MSFS.Upgrade.Parent";
     private const string UpgradeDisabledKey = "MSFS.Upgrade.Disabled";
+    private const string UpgradeRerollCountKey = "MSFS.Upgrade.RerollCount";
+    private const string UpgradeMaxRerollCountKey = "MSFS.Upgrade.MaxRerollCount";
+    private const string UpgradeRerollBrokenKey = "MSFS.Upgrade.RerollBroken";
 
     private const string ShelfActiveKey = "MSFS.Shelf.Active";
     private const string ShelfDroneSlotCountKey = "MSFS.Shelf.DroneSlotCount";
@@ -37,6 +40,9 @@ internal static class ShopLayoutSync
             { UpgradeParentKey, string.Empty },
             { UpgradeDisabledKey, string.Empty },
             { UpgradeSlotCountKey, 0 },
+            { UpgradeRerollCountKey, 0 },
+            { UpgradeMaxRerollCountKey, -1 },
+            { UpgradeRerollBrokenKey, false },
 
             { ShelfActiveKey, false },
             { ShelfDroneSlotCountKey, 0 },
@@ -85,7 +91,10 @@ internal static class ShopLayoutSync
             { UpgradePositionKey, layout.Position },
             { UpgradeRotationKey, layout.Rotation },
             { UpgradeParentKey, layout.ParentPath ?? string.Empty },
-            { UpgradeDisabledKey, JoinPaths(layout.DisabledPaths) }
+            { UpgradeDisabledKey, JoinPaths(layout.DisabledPaths) },
+            { UpgradeRerollCountKey, layout.RerollCount },
+            { UpgradeMaxRerollCountKey, layout.MaxRerollCount },
+            { UpgradeRerollBrokenKey, layout.RerollBroken }
         };
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
@@ -115,9 +124,56 @@ internal static class ShopLayoutSync
             Position = ReadVector3(props, UpgradePositionKey),
             Rotation = ReadQuaternion(props, UpgradeRotationKey),
             ParentPath = ReadString(props, UpgradeParentKey),
-            DisabledPaths = SplitPaths(ReadString(props, UpgradeDisabledKey))
+            DisabledPaths = SplitPaths(ReadString(props, UpgradeDisabledKey)),
+            RerollCount = ReadInt(props, UpgradeRerollCountKey),
+            MaxRerollCount = props.ContainsKey(UpgradeMaxRerollCountKey)
+                ? ReadInt(props, UpgradeMaxRerollCountKey)
+                : -1,
+            RerollBroken = ReadBool(props, UpgradeRerollBrokenKey)
         };
 
+        return true;
+    }
+
+
+    internal static void SetUpgradeRerollState(int rerollCount, int maxRerollCount, bool broken)
+    {
+        if (!CanWrite())
+            return;
+
+        var props = new Hashtable
+        {
+            { UpgradeRerollCountKey, rerollCount },
+            { UpgradeMaxRerollCountKey, maxRerollCount },
+            { UpgradeRerollBrokenKey, broken }
+        };
+
+        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+    }
+
+
+    internal static bool TryGetUpgradeRerollState(out int rerollCount, out int maxRerollCount, out bool broken)
+    {
+        rerollCount = 0;
+        maxRerollCount = -1;
+        broken = false;
+
+        if (!CanRead())
+            return false;
+
+        Hashtable props = PhotonNetwork.CurrentRoom.CustomProperties;
+        if (!props.ContainsKey(UpgradeRerollCountKey) &&
+            !props.ContainsKey(UpgradeMaxRerollCountKey) &&
+            !props.ContainsKey(UpgradeRerollBrokenKey))
+        {
+            return false;
+        }
+
+        rerollCount = ReadInt(props, UpgradeRerollCountKey);
+        maxRerollCount = props.ContainsKey(UpgradeMaxRerollCountKey)
+            ? ReadInt(props, UpgradeMaxRerollCountKey)
+            : -1;
+        broken = ReadBool(props, UpgradeRerollBrokenKey);
         return true;
     }
 
@@ -246,7 +302,11 @@ internal static class ShopLayoutSync
 
     private static int NextSequence()
     {
-        _nextSequence++;
+        int roomSequence = CanRead()
+            ? ReadInt(PhotonNetwork.CurrentRoom.CustomProperties, LayoutSequenceKey)
+            : 0;
+
+        _nextSequence = Math.Max(_nextSequence, roomSequence) + 1;
         if (_nextSequence <= 0)
             _nextSequence = 1;
 

@@ -15,12 +15,18 @@ internal sealed partial class UpgradeStandRerollController
 
         foreach (CachedUpgrade cached in upgrades)
         {
+            string previousKey = ItemKey(cached.Item);
+            DecrementCount(displayedCounts, previousKey);
+
             Item replacement = SelectReplacement(cached.Item, displayedCounts, selectedCounts);
             if (replacement == null)
+            {
+                IncrementCount(displayedCounts, previousKey);
                 continue;
+            }
 
             string key = ItemKey(replacement);
-            selectedCounts[key] = selectedCounts.TryGetValue(key, out int count) ? count + 1 : 1;
+            IncrementCount(selectedCounts, key);
             replacements.Add(new PendingReplacement(cached.Upgrade, replacement, cached.Position, cached.Rotation));
         }
 
@@ -32,6 +38,22 @@ internal sealed partial class UpgradeStandRerollController
         }
 
         return replacements;
+    }
+
+    private static void IncrementCount(Dictionary<string, int> counts, string key)
+    {
+        counts[key] = counts.TryGetValue(key, out int count) ? count + 1 : 1;
+    }
+
+    private static void DecrementCount(Dictionary<string, int> counts, string key)
+    {
+        if (!counts.TryGetValue(key, out int count))
+            return;
+
+        if (count <= 1)
+            counts.Remove(key);
+        else
+            counts[key] = count - 1;
     }
 
     private List<CachedUpgrade> ScanUpgradesInside()
@@ -121,12 +143,21 @@ internal sealed partial class UpgradeStandRerollController
         int players = GameDirector.instance != null ? GameDirector.instance.PlayerList.Count : 1;
         List<(Item item, int weight)> candidates = new();
 
-        foreach (Item item in StatsManager.instance.itemDictionary.Values)
+        IEnumerable<Item> registeredItems = StatsManager.instance.itemDictionary.Values
+            .Where(item => item != null)
+            .GroupBy(ItemKey, System.StringComparer.Ordinal)
+            .Select(group => group.First());
+
+        foreach (Item item in registeredItems)
         {
             if (item == null || item.disabled || item.itemType != SemiFunc.itemType.item_upgrade)
                 continue;
 
-            if (!allowPrevious && item == previous)
+            if (item.prefab == null || !item.prefab.IsValid())
+                continue;
+
+            if (!allowPrevious &&
+                string.Equals(ItemKey(item), ItemKey(previous), System.StringComparison.Ordinal))
                 continue;
 
             int chance = Plugin.GetItemSpawnChance(item);
@@ -144,7 +175,8 @@ internal sealed partial class UpgradeStandRerollController
             if (item.maxAmountInShop > 0 && purchased + displayed + selected >= item.maxAmountInShop)
                 continue;
 
-            if (item.maxPurchase && StatsManager.instance.GetItemsUpgradesPurchasedTotal(item.name) >= item.maxPurchaseAmount)
+            if (item.maxPurchase &&
+                StatsManager.instance.GetItemsUpgradesPurchasedTotal(item.name) >= item.maxPurchaseAmount)
                 continue;
 
             if (item.minPlayerCount > 1 && players < item.minPlayerCount)

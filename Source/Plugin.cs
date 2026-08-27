@@ -122,7 +122,7 @@ public class Plugin : BaseUnityPlugin
         // ========== General ==========
         EnableMod = Config.Bind("General", "Enable Mod", true, "Enable or disable the entire mod.");
         EnableAdditionalUpgradeStand = Config.Bind("General", "Enable Additional Upgrade Stand", true, "Spawn a second upgrade stand in the shop.");
-        EnableVanillaShelfTableRewrite = Config.Bind("General", "Enable Vanilla Shelf Table Rewrite", true, "Move small items to the lower health shelf and make vanilla table small slots accept medium/large/large_high items.");
+        EnableVanillaShelfTableRewrite = Config.Bind("General", "Enable Vanilla Shelf Table Rewrite", true, "Move grenades to the lower health shelf while preserving the exact vanilla table item placements for stable physics.");
         DisableShopPoolLimit = Config.Bind("General", "Disable Shop Pool Limit", true, "Raise vanilla shop spawn budget to the filtered item pool size so free matching slots keep trying to fill.");
         DebugLogs = Config.Bind("General", "Debug Logs", false, "Enable detailed debug logging for troubleshooting.");
 

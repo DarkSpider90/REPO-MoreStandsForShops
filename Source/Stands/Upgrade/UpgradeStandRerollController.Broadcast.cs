@@ -54,6 +54,15 @@ internal sealed partial class UpgradeStandRerollController
             case MsgHoldRequestStart:
                 if (PhotonNetwork.IsMasterClient)
                 {
+                    if (state != RerollState.Idle &&
+                        state != RerollState.Rollback &&
+                        state != RerollState.WaitingForHost)
+                        return;
+
+                    if (remoteHoldActorNumber > 0 && remoteHoldActorNumber != photonEvent.Sender)
+                        return;
+
+                    remoteHoldActorNumber = photonEvent.Sender;
                     BeginRemoteHoldVisual(progress);
                     BroadcastHoldVisualStart();
                 }
@@ -62,8 +71,12 @@ internal sealed partial class UpgradeStandRerollController
             case MsgHoldRequestStop:
                 if (PhotonNetwork.IsMasterClient)
                 {
+                    if (remoteHoldActorNumber != photonEvent.Sender)
+                        return;
+
                     StopRemoteHoldVisual(progress);
                     BroadcastHoldVisualStop();
+                    remoteHoldActorNumber = -1;
                 }
                 return;
 
@@ -84,12 +97,24 @@ internal sealed partial class UpgradeStandRerollController
 
             case MsgRerollRequest:
                 if (PhotonNetwork.IsMasterClient)
-                    TryStartReroll(visualOnly: false, broadcastVisual: true);
+                    HandleRemoteRerollRequest(photonEvent.Sender);
                 return;
 
             case MsgRerollVisual:
                 if (!PhotonNetwork.IsMasterClient)
+                {
+                    int synchronizedRerollCount = data.Length > 2
+                        ? ReadIntPayload(data[2], rerollCount)
+                        : rerollCount;
+                    int synchronizedMaxRerollCount = data.Length > 3
+                        ? ReadIntPayload(data[3], maxRerollCount)
+                        : maxRerollCount;
+                    ApplySynchronizedState(
+                        synchronizedRerollCount,
+                        synchronizedMaxRerollCount,
+                        synchronizedBroken: false);
                     BeginVisualReroll();
+                }
                 return;
 
             case MsgBreakBuildUpVisual:
@@ -122,7 +147,14 @@ internal sealed partial class UpgradeStandRerollController
 
     private void BroadcastRerollVisual()
     {
-        RaiseRerollEvent(MsgRerollVisual, ReceiverGroup.Others);
+        if (SemiFunc.IsMultiplayer())
+        {
+            PhotonNetwork.RaiseEvent(
+                RerollSyncEvent,
+                new object[] { SyncMagic, MsgRerollVisual, rerollCount, maxRerollCount },
+                new RaiseEventOptions { Receivers = ReceiverGroup.Others },
+                SendOptions.SendReliable);
+        }
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast reroll visual.");
@@ -270,6 +302,21 @@ internal sealed partial class UpgradeStandRerollController
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Sent reroll request to host.");
     }
 
+    private void HandleRemoteRerollRequest(int senderActorNumber)
+    {
+        if (remoteHoldActorNumber != senderActorNumber)
+        {
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Rejected reroll request from actor {senderActorNumber}: no matching hold owner.");
+            return;
+        }
+
+        remoteHoldVisual = false;
+        remoteHoldActorNumber = -1;
+        BroadcastHoldVisualStop();
+        TryStartReroll(visualOnly: false, broadcastVisual: true);
+    }
+
     private void RequestHostHoldStart()
     {
         if (holdRequestSent || !SemiFunc.IsMultiplayer() || PhotonNetwork.IsMasterClient)
@@ -307,6 +354,10 @@ internal sealed partial class UpgradeStandRerollController
         if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
             return;
 
+        MoreStandsForShops.Network.ShopLayoutSync.SetUpgradeRerollState(
+            rerollCount,
+            maxRerollCount,
+            broken: true);
         RaiseRerollEvent(MsgBrokenVisual, ReceiverGroup.Others);
 
         if (Plugin.DebugLogs.Value)
@@ -331,6 +382,17 @@ internal sealed partial class UpgradeStandRerollController
             float value => value,
             double value => (float)value,
             int value => value,
+            _ => fallback
+        };
+    }
+
+    private static int ReadIntPayload(object data, int fallback)
+    {
+        return data switch
+        {
+            int value => value,
+            short value => value,
+            byte value => value,
             _ => fallback
         };
     }

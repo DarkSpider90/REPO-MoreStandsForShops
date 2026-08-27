@@ -64,6 +64,7 @@ internal sealed partial class UpgradeStandRerollController
             ResetBuildUpVisuals();
             stateStart = false;
             remoteHoldVisual = false;
+            remoteHoldActorNumber = -1;
             holdRequestSent = false;
             holdVisualBroadcasted = false;
             resumeChargeFromRollback = false;
@@ -442,7 +443,7 @@ internal sealed partial class UpgradeStandRerollController
             if (meshPositionSpring != null)
                 AddSpringVelocity(meshPositionSpring, new Vector3(0f, 1f, 0f));
             
-            if (maxRerollCount > 0 && rerollCount >= maxRerollCount)
+            if (!visualOnlyReroll && maxRerollCount > 0 && rerollCount >= maxRerollCount)
             {
                 StartBreakBuildUpVisual();
                 if (SemiFunc.IsMultiplayer() && PhotonNetwork.IsMasterClient)

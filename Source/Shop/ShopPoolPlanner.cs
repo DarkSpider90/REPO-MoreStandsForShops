@@ -14,10 +14,180 @@ internal static class ShopPoolPlanner
         TopUpPotentialPoolsFromStats(shopManager);
         RemoveControlledShelfItemsFromVanillaPools(shopManager);
 
-        shopManager.potentialItemUpgrades = FilterListByConfiguredLimits(shopManager.potentialItemUpgrades, "upgrades");
+        shopManager.potentialItemUpgrades = BuildUpgradePool();
         shopManager.potentialItems = FilterListByConfiguredLimits(shopManager.potentialItems, "standard");
         shopManager.potentialItemConsumables = FilterListByConfiguredLimits(shopManager.potentialItemConsumables, "consumables");
         shopManager.potentialItemHealthPacks = FilterListByConfiguredLimits(shopManager.potentialItemHealthPacks, "health");
+    }
+
+
+    private static List<Item> BuildUpgradePool()
+    {
+        int target = GetCount("Total Upgrades");
+        var result = new List<Item>(System.Math.Max(0, target));
+        var itemDict = StatsManager.instance?.itemDictionary;
+
+        if (target <= 0 || itemDict == null)
+            return result;
+
+        int playerCount = GameDirector.instance != null
+            ? GameDirector.instance.PlayerList.Count
+            : 1;
+        int sameItemLimit = Plugin.SameItemCopies.TryGetValue("Upgrades", out var copyEntry)
+            ? copyEntry.Value
+            : target;
+
+        List<Item> candidates = itemDict.Values
+            .Where(item => item != null && item.itemType == SemiFunc.itemType.item_upgrade)
+            .GroupBy(ItemKey, System.StringComparer.Ordinal)
+            .Select(group => group.First())
+            .OrderBy(ItemKey, System.StringComparer.Ordinal)
+            .ToList();
+
+        var eligible = new List<Item>(candidates.Count);
+        foreach (Item item in candidates)
+        {
+            if (TryGetUpgradeBlockReason(item, playerCount, out string reason))
+            {
+                if (Plugin.DebugLogs.Value)
+                    Plugin.Log.LogInfo($"[ShopPoolPlanner] Upgrade candidate blocked: item={ItemName(item)}, reason={reason}.");
+                continue;
+            }
+
+            eligible.Add(item);
+        }
+
+        var selectedCounts = new Dictionary<string, int>(System.StringComparer.Ordinal);
+        while (result.Count < target)
+        {
+            Item selected = SelectWeightedUpgrade(eligible, selectedCounts, sameItemLimit);
+            if (selected == null)
+                break;
+
+            string key = ItemKey(selected);
+            selectedCounts[key] = selectedCounts.TryGetValue(key, out int current) ? current + 1 : 1;
+            result.Add(selected);
+        }
+
+        if (Plugin.DebugLogs.Value)
+        {
+            string candidateSummary = string.Join(", ", eligible.Select(item => $"{ItemName(item)}={Plugin.GetItemSpawnChance(item)}"));
+            string selectionSummary = string.Join(", ", result
+                .GroupBy(ItemKey, System.StringComparer.Ordinal)
+                .OrderBy(group => ItemName(group.First()), System.StringComparer.Ordinal)
+                .Select(group => $"{ItemName(group.First())} x{group.Count()}"));
+
+            Plugin.Log.LogInfo(
+                $"[ShopPoolPlanner] Built unified upgrade pool: registered={candidates.Count}, " +
+                $"eligible={eligible.Count}, selected={result.Count}/{target}, sameItemLimit={sameItemLimit}.");
+            Plugin.Log.LogInfo($"[ShopPoolPlanner] Eligible upgrade weights: {candidateSummary}.");
+            Plugin.Log.LogInfo($"[ShopPoolPlanner] Selected upgrade pool: {selectionSummary}.");
+        }
+
+        return result;
+    }
+
+
+    private static bool TryGetUpgradeBlockReason(Item item, int playerCount, out string reason)
+    {
+        reason = null;
+
+        if (item == null)
+        {
+            reason = "missing item";
+            return true;
+        }
+
+        if (item.disabled)
+        {
+            reason = "item is disabled";
+            return true;
+        }
+
+        if (item.prefab == null || !item.prefab.IsValid())
+        {
+            reason = "missing prefab";
+            return true;
+        }
+
+        int chance = Plugin.GetItemSpawnChance(item);
+        if (chance <= 0)
+        {
+            reason = "configured chance is 0";
+            return true;
+        }
+
+        int purchased = SemiFunc.StatGetItemsPurchased(item.name);
+        if (item.maxAmountInShop <= purchased)
+        {
+            reason = $"shop amount limit reached ({purchased}/{item.maxAmountInShop})";
+            return true;
+        }
+
+        if (item.maxPurchase &&
+            StatsManager.instance.GetItemsUpgradesPurchasedTotal(item.name) >= item.maxPurchaseAmount)
+        {
+            reason = $"purchase limit reached ({item.maxPurchaseAmount})";
+            return true;
+        }
+
+        if (item.minPlayerCount > playerCount)
+        {
+            reason = $"requires {item.minPlayerCount} players (current {playerCount})";
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private static Item SelectWeightedUpgrade(
+        List<Item> candidates,
+        Dictionary<string, int> selectedCounts,
+        int sameItemLimit)
+    {
+        int totalWeight = 0;
+
+        foreach (Item item in candidates)
+        {
+            if (!CanSelectUpgrade(item, selectedCounts, sameItemLimit))
+                continue;
+
+            totalWeight += System.Math.Max(1, Plugin.GetItemSpawnChance(item));
+        }
+
+        if (totalWeight <= 0)
+            return null;
+
+        int roll = Random.Range(0, totalWeight);
+        foreach (Item item in candidates)
+        {
+            if (!CanSelectUpgrade(item, selectedCounts, sameItemLimit))
+                continue;
+
+            int weight = System.Math.Max(1, Plugin.GetItemSpawnChance(item));
+            if (roll < weight)
+                return item;
+
+            roll -= weight;
+        }
+
+        return null;
+    }
+
+
+    private static bool CanSelectUpgrade(
+        Item item,
+        Dictionary<string, int> selectedCounts,
+        int sameItemLimit)
+    {
+        string key = ItemKey(item);
+        int selected = selectedCounts.TryGetValue(key, out int current) ? current : 0;
+        if (selected >= sameItemLimit)
+            return false;
+
+        int purchased = SemiFunc.StatGetItemsPurchased(item.name);
+        return purchased + selected < item.maxAmountInShop;
     }
 
 
@@ -66,14 +236,19 @@ internal static class ShopPoolPlanner
             return;
 
         var candidatesByCountKey = itemDict.Values
-            .Where(item => item != null && !item.disabled)
+            .Where(IsAvailableTopUpCandidate)
+            .GroupBy(ItemKey, System.StringComparer.Ordinal)
+            .Select(group => group.First())
             .Select(item => new
             {
                 Item = item,
                 HasKeys = ShopStockCatalog.TryGetConfigKeys(item, out string countKey, out _),
                 CountKey = countKey
             })
-            .Where(entry => entry.HasKeys && !IsCustomShelfOnlyCountKey(entry.CountKey) && GetCount(entry.CountKey) > 0)
+            .Where(entry => entry.HasKeys &&
+                            entry.CountKey != "Total Upgrades" &&
+                            !IsCustomShelfOnlyCountKey(entry.CountKey) &&
+                            GetCount(entry.CountKey) > 0)
             .GroupBy(entry => entry.CountKey);
 
         foreach (var categoryGroup in candidatesByCountKey)
@@ -132,7 +307,7 @@ internal static class ShopPoolPlanner
 
     private static bool CanAddCandidate(List<Item> pool, Item item, string countKey)
     {
-        if (item == null || item.disabled)
+        if (!IsAvailableTopUpCandidate(item))
             return false;
 
         if (!ShopStockCatalog.TryGetConfigKeys(item, out string itemCountKey, out string copyKey))
@@ -154,6 +329,27 @@ internal static class ShopPoolPlanner
         }
 
         return true;
+    }
+
+
+    private static bool IsAvailableTopUpCandidate(Item item)
+    {
+        if (item == null || item.disabled || item.prefab == null || !item.prefab.IsValid())
+            return false;
+
+        if (Plugin.GetItemSpawnChance(item) <= 0)
+            return false;
+
+        int players = GameDirector.instance != null ? GameDirector.instance.PlayerList.Count : 1;
+        if (item.minPlayerCount > players)
+            return false;
+
+        int purchased = SemiFunc.StatGetItemsPurchased(item.name);
+        if (item.maxAmountInShop > 0 && purchased >= item.maxAmountInShop)
+            return false;
+
+        return !item.maxPurchase ||
+               StatsManager.instance.GetItemsUpgradesPurchasedTotal(item.name) < item.maxPurchaseAmount;
     }
 
 
@@ -300,6 +496,15 @@ internal static class ShopPoolPlanner
             return "<null>";
 
         return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
+    }
+
+
+    private static string ItemKey(Item item)
+    {
+        if (item == null)
+            return string.Empty;
+
+        return string.IsNullOrWhiteSpace(item.name) ? ItemName(item) : item.name;
     }
 
 }

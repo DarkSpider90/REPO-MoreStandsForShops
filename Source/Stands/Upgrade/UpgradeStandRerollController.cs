@@ -153,13 +153,34 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
 
     private readonly List<CachedUpgrade> cachedUpgrades = new();
     private readonly List<PendingReplacement> pendingReplacements = new();
+    private readonly RaycastHit[] buttonCastHits = new RaycastHit[64];
     
     private int rollbackTopStage;
     private int rollbackCurrentStage = -1;
     private int rerollCount;
     private int maxRerollCount = -1;
     private int rerollTicksPlayed;
+    private int remoteHoldActorNumber = -1;
     private int RerollCost => 5 + rerollCount * 5;
+
+    internal void ApplySynchronizedState(int synchronizedRerollCount, int synchronizedMaxRerollCount, bool synchronizedBroken)
+    {
+        bool wasBroken = isBroken;
+        rerollCount = Mathf.Max(0, synchronizedRerollCount);
+        maxRerollCount = Mathf.Max(-1, synchronizedMaxRerollCount);
+        isBroken = synchronizedBroken;
+
+        if (isBroken)
+        {
+            state = RerollState.Broken;
+            stateStart = true;
+        }
+        else if (wasBroken && state == RerollState.Broken)
+        {
+            state = RerollState.Idle;
+            stateStart = true;
+        }
+    }
     
 
     private void OnEnable()

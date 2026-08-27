@@ -20,6 +20,8 @@ internal sealed partial class UpgradeStandRerollController
         if (!SemiFunc.IsMasterClientOrSingleplayer())
             return;
 
+        RefreshSynchronizedStateForHost();
+
         if (isBroken)
         {
             StateSet(RerollState.PressFail);
@@ -58,6 +60,10 @@ internal sealed partial class UpgradeStandRerollController
             maxRerollCount = Random.Range(1, 4);
 
         rerollCount++;
+        MoreStandsForShops.Network.ShopLayoutSync.SetUpgradeRerollState(
+            rerollCount,
+            maxRerollCount,
+            broken: false);
         cachedUpgrades.Clear();
         cachedUpgrades.AddRange(upgrades);
         pendingReplacements.Clear();
@@ -72,6 +78,23 @@ internal sealed partial class UpgradeStandRerollController
         if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandReroll] Reroll accepted. upgrades={upgrades.Count}, replacements={replacements.Count}, cost={cost}, rerollCount={rerollCount}, maxBeforeBreak={maxRerollCount}.");
 
         StateSet(RerollState.PressSucceed);
+    }
+
+    private void RefreshSynchronizedStateForHost()
+    {
+        if (!SemiFunc.IsMultiplayer() || !Photon.Pun.PhotonNetwork.IsMasterClient)
+            return;
+
+        if (MoreStandsForShops.Network.ShopLayoutSync.TryGetUpgradeRerollState(
+                out int synchronizedRerollCount,
+                out int synchronizedMaxRerollCount,
+                out bool synchronizedBroken))
+        {
+            ApplySynchronizedState(
+                synchronizedRerollCount,
+                synchronizedMaxRerollCount,
+                synchronizedBroken);
+        }
     }
     
 

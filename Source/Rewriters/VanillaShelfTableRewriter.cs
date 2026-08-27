@@ -9,15 +9,7 @@ namespace MoreStandsForShops.Rewriters;
 internal static class VanillaShelfTableRewriter
 {
     private const string GeneratedPrefix = "MoreStandsForShops Vanilla Shelf Slot";
-    private const string MultiSizePrefix = "MoreStandsForShops Table Multi Slot";
     private const float SameTableSlotDistance = 0.03f;
-
-    private static readonly SemiFunc.itemVolume[] TableSlotTypes =
-    {
-        SemiFunc.itemVolume.medium,
-        SemiFunc.itemVolume.large,
-        SemiFunc.itemVolume.large_high
-    };
 
     private static readonly Vector3[] HealthSlotPositions =
     {
@@ -55,9 +47,9 @@ internal static class VanillaShelfTableRewriter
                 rewrittenShelves++;
         }
 
-        int convertedTableSlots = ConvertVanillaTableVolumesInItemAreas();
+        int preservedTableSlots = PreserveVanillaTableVolumesInItemAreas();
 
-        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ShelfTableRewrite] Rewritten health shelves={rewrittenShelves}, converted table slot group(s)={convertedTableSlots}.");
+        if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[ShelfTableRewrite] Rewritten health shelves={rewrittenShelves}, preserved vanilla table slot group(s)={preservedTableSlots}.");
     }
 
     private static bool RewriteHealthShelf(Transform shelf)
@@ -112,7 +104,7 @@ internal static class VanillaShelfTableRewriter
         }
     }
 
-    private static int ConvertVanillaTableVolumesInItemAreas()
+    private static int PreserveVanillaTableVolumesInItemAreas()
     {
         int converted = 0;
         var tableRoots = FindActiveVanillaTableVolumes()
@@ -137,24 +129,22 @@ internal static class VanillaShelfTableRewriter
                 .ToList();
 
             List<TableLogicalSlot> logicalSlots = BuildLogicalSlots(originalVolumes);
-            int created = 0;
             int reused = 0;
-            int disabled = 0;
 
             for (int i = 0; i < logicalSlots.Count; i++)
             {
                 TableLogicalSlot slot = logicalSlots[i];
                 string groupId = $"table-slot:{tableRoot.GetInstanceID()}:{i:00}";
-                RewriteLogicalTableSlot(tableRoot, slot, groupId, ref reused, ref created, ref disabled);
+                PreserveLogicalTableSlot(slot, groupId, ref reused);
             }
 
             converted += logicalSlots.Count;
 
             if (Plugin.DebugLogs.Value)
                 Plugin.Log.LogInfo(
-                    $"[ShelfTableRewrite] Converted table item area to multi-size slots: " +
+                    $"[ShelfTableRewrite] Preserved vanilla table item area: " +
                     $"root={GetTransformPath(tableRoot)}, originalVolumes={originalVolumes.Count}, " +
-                    $"slotGroups={logicalSlots.Count}, reused={reused}, created={created}, disabled={disabled}.");
+                    $"slotGroups={logicalSlots.Count}, preserved={reused}.");
         }
 
         return converted;
@@ -172,22 +162,6 @@ internal static class VanillaShelfTableRewriter
             marker = volume.gameObject.AddComponent<MoreStandsMultiSizeVolume>();
 
         marker.GroupId = groupId;
-    }
-
-    private static ItemVolume CreateMultiSizeVolume(Transform parent, TableVolumePose pose, string groupId, SemiFunc.itemVolume itemVolume)
-    {
-        GameObject slot = new($"{MultiSizePrefix} {itemVolume}");
-        slot.transform.SetParent(parent, false);
-        ApplyPose(slot.transform, pose);
-
-        ItemVolume volume = slot.AddComponent<ItemVolume>();
-        volume.itemVolume = itemVolume;
-        volume.itemSecretShopType = SemiFunc.itemSecretShopType.none;
-        volume.volumes = new List<GameObject>(pose.Source.Volumes);
-
-        MoreStandsMultiSizeVolume marker = slot.AddComponent<MoreStandsMultiSizeVolume>();
-        marker.GroupId = groupId;
-        return volume;
     }
 
     private static IEnumerable<ItemVolume> FindActiveVanillaTableVolumes()
@@ -228,91 +202,34 @@ internal static class VanillaShelfTableRewriter
         return slots;
     }
 
-    private static void RewriteLogicalTableSlot(
-        Transform tableRoot,
+    private static void PreserveLogicalTableSlot(
         TableLogicalSlot slot,
         string groupId,
-        ref int reused,
-        ref int created,
-        ref int disabled)
+        ref int reused)
     {
-        HashSet<ItemVolume> used = new();
-
-        foreach (SemiFunc.itemVolume itemVolume in TableSlotTypes)
+        // Vanilla does not correct item placement after spawning: it trusts the exact
+        // position and rotation authored on every ItemVolume. Keep those authored
+        // poses and types intact. Fabricating medium/large/large_high variants at the
+        // same X/Z can place a large item on a surface designed for a different item,
+        // causing it to collide with the stand or a neighbouring item and fall down.
+        foreach (ItemVolume volume in slot.Volumes)
         {
-            ItemVolume reusable = PickReusableVolume(slot, itemVolume, used);
-            TableVolumePose pose = BuildPoseForType(slot, itemVolume);
+            if (volume == null)
+                continue;
 
-            if (reusable != null)
-            {
-                ApplyPose(reusable.transform, pose);
-                reusable.volumes = new List<GameObject>(pose.Source.Volumes);
-                MarkMultiSizeVolume(reusable, groupId, itemVolume);
-                used.Add(reusable);
-                reused++;
-            }
-            else
-            {
-                CreateMultiSizeVolume(tableRoot, pose, groupId, itemVolume);
-                created++;
-            }
+            SemiFunc.itemVolume originalType = volume.itemVolume;
+            if (slot.Volumes.Count > 1)
+                MarkMultiSizeVolume(volume, groupId, originalType);
+            reused++;
 
             if (Plugin.DebugLogs.Value)
             {
                 Plugin.Log.LogInfo(
-                    $"[ShelfTableRewrite] Prepared table slot variant: group={groupId}, type={itemVolume}, " +
-                    $"local={FormatVector(pose.LocalPosition)}, yaw={pose.LocalRotation.eulerAngles.y:F1}, " +
-                    $"template={pose.Source.Name}.");
+                    $"[ShelfTableRewrite] Preserved vanilla table slot: group={groupId}, type={originalType}, " +
+                    $"local={FormatVector(volume.transform.localPosition)}, " +
+                    $"yaw={volume.transform.localRotation.eulerAngles.y:F1}.");
             }
         }
-
-        foreach (ItemVolume extra in slot.Volumes.Where(volume => !used.Contains(volume)))
-        {
-            extra.enabled = false;
-            extra.gameObject.SetActive(false);
-            disabled++;
-        }
-    }
-
-    private static ItemVolume PickReusableVolume(TableLogicalSlot slot, SemiFunc.itemVolume itemVolume, HashSet<ItemVolume> used)
-    {
-        ItemVolume exact = slot.Volumes.FirstOrDefault(volume => !used.Contains(volume) && volume.itemVolume == itemVolume);
-        if (exact != null)
-            return exact;
-
-        if (itemVolume == SemiFunc.itemVolume.medium)
-            return slot.Volumes.FirstOrDefault(volume => !used.Contains(volume));
-
-        return null;
-    }
-
-    private static TableVolumePose BuildPoseForType(TableLogicalSlot slot, SemiFunc.itemVolume itemVolume)
-    {
-        TableVolumeTemplate template = FindNearestTemplate(slot, itemVolume)
-                                       ?? FindNearestTemplate(slot, SemiFunc.itemVolume.medium)
-                                       ?? new TableVolumeTemplate(slot.Volumes[0]);
-
-        Vector3 templateLocal = template.LocalPosition;
-        return new TableVolumePose(
-            template,
-            new Vector3(slot.Center.x, templateLocal.y, slot.Center.y),
-            template.LocalRotation,
-            template.LocalScale);
-    }
-
-    private static TableVolumeTemplate FindNearestTemplate(TableLogicalSlot slot, SemiFunc.itemVolume itemVolume)
-    {
-        return slot.AllTableVolumes
-            .Where(volume => volume.ItemVolume == itemVolume)
-            .OrderBy(volume => Vector2.Distance(slot.Center, new Vector2(volume.LocalPosition.x, volume.LocalPosition.z)))
-            .FirstOrDefault();
-    }
-
-    private static void ApplyPose(Transform transform, TableVolumePose pose)
-    {
-        transform.localPosition = pose.LocalPosition;
-        transform.localRotation = pose.LocalRotation;
-        transform.localScale = pose.LocalScale;
     }
 
     private static ItemVolume CreateVolumeSlot(Transform parent, string name, SemiFunc.itemVolume itemVolume, Vector3 localPosition, MoreStandsShelfZone? zone = null)
@@ -358,7 +275,6 @@ internal static class VanillaShelfTableRewriter
     private sealed class TableLogicalSlot
     {
         internal readonly List<ItemVolume> Volumes = new();
-        internal List<TableVolumeTemplate> AllTableVolumes { get; private set; }
         internal Vector2 Center { get; private set; }
 
         internal void Add(ItemVolume volume, Vector2 point)
@@ -368,52 +284,6 @@ internal static class VanillaShelfTableRewriter
                 : ((Center * Volumes.Count) + point) / (Volumes.Count + 1);
 
             Volumes.Add(volume);
-            AllTableVolumes ??= volume.transform.parent.GetComponentsInChildren<ItemVolume>(true)
-                .Where(itemVolume => itemVolume != null && IsTableVolumeType(itemVolume.itemVolume))
-                .Where(itemVolume => !itemVolume.name.StartsWith("MoreStandsForShops", StringComparison.OrdinalIgnoreCase))
-                .Where(itemVolume => itemVolume.GetComponent<MoreStandsMultiSizeVolume>() == null)
-                .Select(itemVolume => new TableVolumeTemplate(itemVolume))
-                .ToList();
-        }
-    }
-    
-    
-    private sealed class TableVolumeTemplate
-    {
-        internal readonly ItemVolume Source;
-        internal readonly SemiFunc.itemVolume ItemVolume;
-        internal readonly string Name;
-        internal readonly Vector3 LocalPosition;
-        internal readonly Quaternion LocalRotation;
-        internal readonly Vector3 LocalScale;
-        internal readonly List<GameObject> Volumes;
-
-        internal TableVolumeTemplate(ItemVolume source)
-        {
-            Source = source;
-            ItemVolume = source.itemVolume;
-            Name = source.name;
-            LocalPosition = source.transform.localPosition;
-            LocalRotation = source.transform.localRotation;
-            LocalScale = source.transform.localScale;
-            Volumes = new List<GameObject>(source.volumes);
-        }
-    }
-    
-
-    private readonly struct TableVolumePose
-    {
-        internal readonly TableVolumeTemplate Source;
-        internal readonly Vector3 LocalPosition;
-        internal readonly Quaternion LocalRotation;
-        internal readonly Vector3 LocalScale;
-
-        internal TableVolumePose(TableVolumeTemplate source, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
-        {
-            Source = source;
-            LocalPosition = localPosition;
-            LocalRotation = localRotation;
-            LocalScale = localScale;
         }
     }
 }

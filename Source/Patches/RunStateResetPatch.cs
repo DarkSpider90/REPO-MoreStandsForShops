@@ -12,19 +12,22 @@ internal static class RunStateResetPatch
     [HarmonyPatch(nameof(RunManager.ChangeLevel))]
     private static void ChangeLevelPostfix()
     {
-        ResetSessionState("level change");
+        ResetSessionState("level change", clearRoomIdentity: false);
     }
 
     [HarmonyPostfix]
     [HarmonyPatch(nameof(RunManager.LeaveToMainMenu))]
     private static void LeaveToMainMenuPostfix()
     {
-        ResetSessionState("leave to main menu");
+        ResetSessionState("leave to main menu", clearRoomIdentity: true);
     }
 
-    private static void ResetSessionState(string reason)
+    private static void ResetSessionState(string reason, bool clearRoomIdentity)
     {
-        ClientShopLayoutApplier.Reset();
+        if (clearRoomIdentity)
+            ClientShopLayoutApplier.ResetForSession();
+        else
+            ClientShopLayoutApplier.ResetForLevelChange();
         ShopItemLimitPlanner.ResetForSession();
         ShopSceneCache.Clear();
 

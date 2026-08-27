@@ -78,9 +78,17 @@ internal sealed partial class UpgradeStandRerollController
             return true;
         }
 
-        RaycastHit[] hits = Physics.SphereCastAll(ray, ButtonCastRadius, ButtonUseDistance, ~0, QueryTriggerInteraction.Collide);
-        foreach (RaycastHit sphereHit in hits.OrderBy(h => h.distance))
+        int hitCount = Physics.SphereCastNonAlloc(
+            ray,
+            ButtonCastRadius,
+            buttonCastHits,
+            ButtonUseDistance,
+            ~0,
+            QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < hitCount; i++)
         {
+            RaycastHit sphereHit = buttonCastHits[i];
             if (sphereHit.transform == null)
                 continue;
 

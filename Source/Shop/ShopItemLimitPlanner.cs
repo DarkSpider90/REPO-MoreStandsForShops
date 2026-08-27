@@ -38,9 +38,6 @@ internal static class ShopItemLimitPlanner
 
             int newMax = countEntry.Value;
             item.maxAmountInShop = newMax;
-            item.maxAmount = newMax;
-            item.maxPurchase = newMax > 0;
-            item.maxPurchaseAmount = newMax;
 
             if (Plugin.DebugLogs.Value)
                 Plugin.Log.LogInfo($"[ShopItemLimitPlanner] Set {item.itemName} maxAmountInShop to {newMax}");

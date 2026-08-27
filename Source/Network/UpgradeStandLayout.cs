@@ -11,4 +11,7 @@ internal sealed class UpgradeStandLayout
     internal string ParentPath;
     internal string[] DisabledPaths;
     internal int UpgradeSlotCount;
+    internal int RerollCount;
+    internal int MaxRerollCount;
+    internal bool RerollBroken;
 }

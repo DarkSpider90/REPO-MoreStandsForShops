@@ -23,10 +23,13 @@ internal static class ShelfItemSelector
 
         return StatsManager.instance.itemDictionary.Values
             .Where(item => item != null && !item.disabled)
+            .GroupBy(ItemIdentity, StringComparer.Ordinal)
+            .Select(group => group.First())
             .Where(item => IsZoneItem(item, zone))
             .Where(item => !IsBlockedShelfItem(item, zone))
             .Where(item => item.itemVolume == slotVolume)
             .Where(item => Plugin.GetItemSpawnChance(item) > 0)
+            .Where(item => CanSpawnItem(zone, item))
             .Where(item => SameItemCount(zone, item) < SameCopyLimit(zone))
             .OrderBy(WeightedRandomSortKey)
             .FirstOrDefault();
@@ -124,8 +127,34 @@ internal static class ShelfItemSelector
         return SpawnedByItem.TryGetValue(ItemKey(zone, item), out int count) ? count : 0;
     }
 
+    private static bool CanSpawnItem(MoreStandsShelfZone zone, Item item)
+    {
+        if (item?.prefab == null || !item.prefab.IsValid())
+            return false;
+
+        int players = GameDirector.instance != null ? GameDirector.instance.PlayerList.Count : 1;
+        if (item.minPlayerCount > players)
+            return false;
+
+        int purchased = SemiFunc.StatGetItemsPurchased(item.name);
+        int selected = SameItemCount(zone, item);
+        if (item.maxAmountInShop > 0 && purchased + selected >= item.maxAmountInShop)
+            return false;
+
+        return !item.maxPurchase ||
+               StatsManager.instance.GetItemsUpgradesPurchasedTotal(item.name) < item.maxPurchaseAmount;
+    }
+
     private static string ItemKey(MoreStandsShelfZone zone, Item item)
     {
-        return zone + ":" + ItemName(item);
+        return zone + ":" + ItemIdentity(item);
+    }
+
+    private static string ItemIdentity(Item item)
+    {
+        if (item == null)
+            return string.Empty;
+
+        return string.IsNullOrWhiteSpace(item.name) ? ItemName(item) : item.name;
     }
 }

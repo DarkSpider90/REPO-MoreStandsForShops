@@ -162,8 +162,11 @@ public static class DroneCrystalStandSpawner
 
     private static GameObject FindExistingSpawnedStand()
     {
-        return ShopSceneCache.Current.Transforms
+        UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+
+        return Resources.FindObjectsOfTypeAll<Transform>()
             .Where(t => t != null && t.gameObject.activeInHierarchy)
+            .Where(t => t.gameObject.scene == activeScene)
             .Where(t => t.name.StartsWith("MoreStandsForShops Drone Crystal Stand", System.StringComparison.OrdinalIgnoreCase))
             .Select(t => t.gameObject)
             .FirstOrDefault();

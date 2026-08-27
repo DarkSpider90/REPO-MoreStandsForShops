@@ -117,7 +117,10 @@ public static class UpgradeStandSpawner
                         DisabledPaths = disabledObjects.ToArray(),
                         UpgradeSlotCount = Plugin.ItemCounts.TryGetValue("Upgrades Per Stand", out var upgradeSlots)
                             ? upgradeSlots.Value
-                            : 14
+                            : 14,
+                        RerollCount = 0,
+                        MaxRerollCount = -1,
+                        RerollBroken = false
                 });
 
             if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Successfully spawned additional upgrade stand: variant={point.VariantId}, sourceCount={point.SourceCount}, main={point.MainModule}, local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}, protectPainting={protectPaintingObjects}.");
@@ -132,14 +135,26 @@ public static class UpgradeStandSpawner
     }
 
 
-    public static bool SpawnNetworkVisual(string spawnId, string variantId, Vector3 position, Quaternion rotation, string parentPath, string[] disabledPaths)
+    public static bool SpawnNetworkVisual(
+        string spawnId,
+        string variantId,
+        Vector3 position,
+        Quaternion rotation,
+        string parentPath,
+        string[] disabledPaths,
+        int rerollCount,
+        int maxRerollCount,
+        bool rerollBroken)
     {
         if (!EnsurePrefabPrepared())
             return false;
 
         GameObject existing = FindExistingSpawnedStand();
         if (existing != null)
+        {
+            ApplyRerollState(existing, rerollCount, maxRerollCount, rerollBroken);
             return true;
+        }
 
         Transform parent = ScenePathUtility.FindTransformByPath(parentPath);
         if (parent == null)
@@ -152,11 +167,20 @@ public static class UpgradeStandSpawner
         spawnedStand.SetActive(true);
         spawnedStand.transform.SetParent(parent, true);
         DisableItemVolumes(spawnedStand);
+        ApplyRerollState(spawnedStand, rerollCount, maxRerollCount, rerollBroken);
 
         if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Network visual spawned: id={spawnId}, variant={variantId}, parent={parentPath}.");
         SchedulePresetBlockerRecheck(disabledPaths, "[UpgradeStandSpawner:NetworkDelayed]");
         ScheduleMagazineDisplayRecheck(position, rotation);
         return true;
+    }
+
+    private static void ApplyRerollState(GameObject stand, int rerollCount, int maxRerollCount, bool rerollBroken)
+    {
+        UpgradeStandRerollController controller = stand == null
+            ? null
+            : stand.GetComponent<UpgradeStandRerollController>();
+        controller?.ApplySynchronizedState(rerollCount, maxRerollCount, rerollBroken);
     }
 
     private static void SchedulePresetBlockerRecheck(IEnumerable<string> paths, string logPrefix)

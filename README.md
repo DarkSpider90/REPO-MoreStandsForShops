@@ -9,7 +9,7 @@ I made it for games where the shop starts to feel too small once you play with f
 - A second upgrade stand.
 - A dedicated shelf for drones and power crystals.
 - Reworked use of the vanilla health shelf, with health packs on top and grenades below.
-- Additional spawn space for weapons, tools, staffs, and other large shop items.
+- Safe reuse of vanilla weapon and tool tables without altering their designer-authored item positions.
 
 The goal is not to turn the shop into chaos. The goal is to give the game more room to breathe.
 
@@ -95,6 +95,18 @@ The host controls the shop layout and synchronized item pools.
 ## Notes
 
 This mod tries to stay close to the normal shop feeling. Items should still feel like they belong in the shop, just with more space and better organization.
+
+## ☕ Support More Stands For Shops
+
+---
+
+> If More Stands For Shops has made your R.E.P.O. runs more enjoyable, you can support its continued development, compatibility work and multiplayer testing.
+>
+> ## [❤️ Support DarkSpider on Ko-fi →](https://ko-fi.com/darkspider)
+>
+> Every coffee helps. Thank you for supporting the mod.
+
+---
 
 ## Credits / Inspirations
 

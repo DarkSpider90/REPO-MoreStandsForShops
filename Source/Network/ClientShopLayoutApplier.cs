@@ -1,31 +1,54 @@
 using System.Collections;
 using MoreStandsForShops.Spawners;
+using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
 
 namespace MoreStandsForShops.Network;
 
 internal sealed class ClientShopLayoutApplier : MonoBehaviour
 {
-    private const int MaxAttempts = 40;
+    private const int MaxAttempts = 120;
     private const float RetryDelay = 0.25f;
 
     private static ClientShopLayoutApplier _instance;
     private static bool _isApplying;
     private static int _lastAppliedSequence;
+    private static Room _lastAppliedRoom;
 
-    // Вызывать при выходе в меню / смене сессии, чтобы не застрять с _isApplying=true
-    internal static void Reset()
+    internal static void ResetForLevelChange()
+    {
+        Reset(clearRoomIdentity: false);
+    }
+
+    internal static void ResetForSession()
+    {
+        Reset(clearRoomIdentity: true);
+    }
+
+    private static void Reset(bool clearRoomIdentity)
     {
         if (_instance != null)
             _instance.StopAllCoroutines();
 
         _isApplying = false;
-        // _lastAppliedSequence НЕ сбрасываем — он защищает от повторного применения
-        // одного и того же layout при реконнекте в ту же комнату
+
+        if (!clearRoomIdentity)
+            return;
+
+        _lastAppliedRoom = null;
+        _lastAppliedSequence = 0;
     }
 
     internal static void ApplyWhenReady()
     {
+        Room currentRoom = PhotonNetwork.CurrentRoom;
+        if (!ReferenceEquals(_lastAppliedRoom, currentRoom))
+        {
+            _lastAppliedRoom = currentRoom;
+            _lastAppliedSequence = 0;
+        }
+
         if (_isApplying)
             return;
 
@@ -56,9 +79,14 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
             if (ready && sequence != _lastAppliedSequence)
             {
-                ApplyNow(sequence);
-                _isApplying = false;
-                yield break;
+                if (ApplyNow(sequence))
+                {
+                    _isApplying = false;
+                    yield break;
+                }
+
+                if (Plugin.DebugLogs.Value)
+                    Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Layout sequence {sequence} is ready but scene objects are not ready yet; retrying.");
             }
 
             yield return new WaitForSeconds(RetryDelay);
@@ -69,22 +97,28 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
     }
     
 
-    private static void ApplyNow(int sequence)
+    private static bool ApplyNow(int sequence)
     {
         bool appliedAny = false;
+        bool success = true;
 
         if (ShopLayoutSync.TryGetUpgradeStand(out UpgradeStandLayout upgradeLayout))
         {
             if (Plugin.DebugLogs.Value)
                 Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Upgrade layout received: variant={upgradeLayout.VariantId}, slots={upgradeLayout.UpgradeSlotCount}.");
 
-            appliedAny |= UpgradeStandSpawner.SpawnNetworkVisual(
+            bool applied = UpgradeStandSpawner.SpawnNetworkVisual(
                 "room-layout",
                 upgradeLayout.VariantId,
                 upgradeLayout.Position,
                 upgradeLayout.Rotation,
                 upgradeLayout.ParentPath,
-                upgradeLayout.DisabledPaths);
+                upgradeLayout.DisabledPaths,
+                upgradeLayout.RerollCount,
+                upgradeLayout.MaxRerollCount,
+                upgradeLayout.RerollBroken);
+            appliedAny |= applied;
+            success &= applied;
         }
 
         if (ShopLayoutSync.TryGetDroneCrystalShelf(out DroneCrystalShelfLayout shelfLayout))
@@ -92,11 +126,17 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
             if (Plugin.DebugLogs.Value)
                 Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Shelf layout received: droneSlots={shelfLayout.DroneSlotCount}, crystalSlots={shelfLayout.CrystalSlotCount}.");
 
-            appliedAny |= DroneCrystalStandSpawner.SpawnNetworkVisual(
+            bool applied = DroneCrystalStandSpawner.SpawnNetworkVisual(
                 "room-layout",
                 shelfLayout.DisabledPaths);
+            appliedAny |= applied;
+            success &= applied;
         }
 
+        if (!success)
+            return false;
+
+        _lastAppliedRoom = PhotonNetwork.CurrentRoom;
         _lastAppliedSequence = sequence;
 
         if (Plugin.DebugLogs.Value)
@@ -106,5 +146,7 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
             else
                 Plugin.Log.LogInfo("[ClientShopLayoutApplier] Host shop layout was ready but contained no custom stands.");
         }
+
+        return true;
     }
 }
