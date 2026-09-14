@@ -8,13 +8,18 @@ namespace MoreStandsForShops.Network;
 
 internal sealed class ClientShopLayoutApplier : MonoBehaviour
 {
-    private const int MaxAttempts = 120;
-    private const float RetryDelay = 0.25f;
+    private const int MaxAttempts = 32;
+    private const int AttemptsPerDelayTier = 8;
+    private const float InitialRetryDelay = 0.25f;
+    private const float MaxRetryDelay = 2f;
 
     private static ClientShopLayoutApplier _instance;
     private static bool _isApplying;
     private static int _lastAppliedSequence;
     private static Room _lastAppliedRoom;
+    private static int _pendingSequence;
+    private static bool _upgradeApplied;
+    private static bool _shelfApplied;
 
     internal static void ResetForLevelChange()
     {
@@ -32,6 +37,7 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
             _instance.StopAllCoroutines();
 
         _isApplying = false;
+        ResetPartialProgress();
 
         if (!clearRoomIdentity)
             return;
@@ -47,6 +53,7 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
         {
             _lastAppliedRoom = currentRoom;
             _lastAppliedSequence = 0;
+            ResetPartialProgress();
         }
 
         if (_isApplying)
@@ -79,6 +86,13 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
             if (ready && sequence != _lastAppliedSequence)
             {
+                if (_pendingSequence != sequence)
+                {
+                    _pendingSequence = sequence;
+                    _upgradeApplied = false;
+                    _shelfApplied = false;
+                }
+
                 if (ApplyNow(sequence))
                 {
                     _isApplying = false;
@@ -89,7 +103,7 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
                     Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Layout sequence {sequence} is ready but scene objects are not ready yet; retrying.");
             }
 
-            yield return new WaitForSeconds(RetryDelay);
+            yield return new WaitForSeconds(RetryDelayForAttempt(attempt));
         }
 
         _isApplying = false;
@@ -99,10 +113,9 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
 
     private static bool ApplyNow(int sequence)
     {
-        bool appliedAny = false;
-        bool success = true;
+        bool appliedAny = _upgradeApplied || _shelfApplied;
 
-        if (ShopLayoutSync.TryGetUpgradeStand(out UpgradeStandLayout upgradeLayout))
+        if (!_upgradeApplied && ShopLayoutSync.TryGetUpgradeStand(out UpgradeStandLayout upgradeLayout))
         {
             if (Plugin.DebugLogs.Value)
                 Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Upgrade layout received: variant={upgradeLayout.VariantId}, slots={upgradeLayout.UpgradeSlotCount}.");
@@ -118,10 +131,15 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
                 upgradeLayout.MaxRerollCount,
                 upgradeLayout.RerollBroken);
             appliedAny |= applied;
-            success &= applied;
+            _upgradeApplied = applied;
+        }
+        else if (!_upgradeApplied)
+        {
+            // A ready layout may intentionally omit this optional stand.
+            _upgradeApplied = true;
         }
 
-        if (ShopLayoutSync.TryGetDroneCrystalShelf(out DroneCrystalShelfLayout shelfLayout))
+        if (!_shelfApplied && ShopLayoutSync.TryGetDroneCrystalShelf(out DroneCrystalShelfLayout shelfLayout))
         {
             if (Plugin.DebugLogs.Value)
                 Plugin.Log.LogInfo($"[ClientShopLayoutApplier] Shelf layout received: droneSlots={shelfLayout.DroneSlotCount}, crystalSlots={shelfLayout.CrystalSlotCount}.");
@@ -130,10 +148,14 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
                 "room-layout",
                 shelfLayout.DisabledPaths);
             appliedAny |= applied;
-            success &= applied;
+            _shelfApplied = applied;
+        }
+        else if (!_shelfApplied)
+        {
+            _shelfApplied = true;
         }
 
-        if (!success)
+        if (!_upgradeApplied || !_shelfApplied)
             return false;
 
         _lastAppliedRoom = PhotonNetwork.CurrentRoom;
@@ -148,5 +170,18 @@ internal sealed class ClientShopLayoutApplier : MonoBehaviour
         }
 
         return true;
+    }
+
+    private static float RetryDelayForAttempt(int attempt)
+    {
+        int tier = Mathf.Max(0, (attempt - 1) / AttemptsPerDelayTier);
+        return Mathf.Min(MaxRetryDelay, InitialRetryDelay * (1 << tier));
+    }
+
+    private static void ResetPartialProgress()
+    {
+        _pendingSequence = 0;
+        _upgradeApplied = false;
+        _shelfApplied = false;
     }
 }

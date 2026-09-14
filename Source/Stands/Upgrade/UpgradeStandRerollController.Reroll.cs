@@ -52,6 +52,14 @@ internal sealed partial class UpgradeStandRerollController
             return;
         }
 
+        activeRerollTransactionId = BeginPendingRerollTransaction(replacements);
+        if (SemiFunc.IsMultiplayer() && activeRerollTransactionId <= 0)
+        {
+            Plugin.Log.LogWarning("[UpgradeStandReroll] Reroll skipped: pending network transaction could not be stored safely.");
+            StateSet(RerollState.PressFail);
+            return;
+        }
+
         SemiFunc.StatSetRunCurrency(SemiFunc.StatGetRunCurrency() - cost);
         if (CurrencyUI.instance != null)
             CurrencyUI.instance.FetchCurrency();
@@ -68,6 +76,8 @@ internal sealed partial class UpgradeStandRerollController
         cachedUpgrades.AddRange(upgrades);
         pendingReplacements.Clear();
         pendingReplacements.AddRange(replacements);
+        pendingRerollCost = cost;
+        replacementsCommitted = false;
         visualOnlyReroll = false;
 
         BroadcastHoldVisualStop();
@@ -107,5 +117,33 @@ internal sealed partial class UpgradeStandRerollController
             return false;
 
         return scanBox != null;
+    }
+
+
+    private void HandleRerollCommitFailure()
+    {
+        if (pendingRerollCost > 0)
+        {
+            SemiFunc.StatSetRunCurrency(SemiFunc.StatGetRunCurrency() + pendingRerollCost);
+            if (CurrencyUI.instance != null)
+                CurrencyUI.instance.FetchCurrency();
+        }
+
+        pendingRerollCost = 0;
+        rerollCount = Mathf.Max(0, rerollCount - 1);
+        MoreStandsForShops.Network.ShopLayoutSync.SetUpgradeRerollState(
+            rerollCount,
+            maxRerollCount,
+            broken: false);
+        MoreStandsForShops.Network.ShopLayoutSync.CompleteUpgradeRerollTransaction(
+            activeRerollTransactionId);
+        activeRerollTransactionId = 0;
+        cachedUpgrades.Clear();
+        pendingReplacements.Clear();
+        replacementsCommitted = false;
+        visualOnlyReroll = true;
+        BroadcastStateCorrection();
+
+        Plugin.Log.LogWarning("[UpgradeStandReroll] Replacement commit failed safely; originals were preserved and currency was refunded.");
     }
 }

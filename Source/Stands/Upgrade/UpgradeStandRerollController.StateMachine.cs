@@ -341,9 +341,9 @@ internal sealed partial class UpgradeStandRerollController
             if (soundRollStart != null)
                 
                 soundRollStart.Play(CompartmentSoundPosition);
-            if (!visualOnlyReroll)
-                DestroyCachedUpgrades();
-            
+            if (!visualOnlyReroll && !replacementsCommitted && !CommitPendingReplacementsAtomically())
+                HandleRerollCommitFailure();
+
             ShakeCompartment();
             
             if (meshRotationSpring != null)
@@ -476,7 +476,7 @@ internal sealed partial class UpgradeStandRerollController
             hatchAnimationEval = 1f;
             hatchOpenImpactPlayed = false;
             if (!visualOnlyReroll)
-                SpawnPendingReplacements();
+                ActivatePreparedReplacementsForReveal();
             if (hatchParticles != null)
                 hatchParticles.Play(true);
             if (soundHatchOpen != null)
@@ -515,6 +515,9 @@ internal sealed partial class UpgradeStandRerollController
         {
             cachedUpgrades.Clear();
             pendingReplacements.Clear();
+            pendingRerollCost = 0;
+            activeRerollTransactionId = 0;
+            replacementsCommitted = false;
 
             if (!visualOnlyReroll && maxRerollCount > 0 && rerollCount >= maxRerollCount)
             {

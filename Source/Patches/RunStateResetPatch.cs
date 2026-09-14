@@ -1,6 +1,7 @@
 using HarmonyLib;
 using MoreStandsForShops.Network;
 using MoreStandsForShops.Shop;
+using MoreStandsForShops.Spawners;
 using MoreStandsForShops.Utilities;
 
 namespace MoreStandsForShops.Patches;
@@ -24,11 +25,16 @@ internal static class RunStateResetPatch
 
     private static void ResetSessionState(string reason, bool clearRoomIdentity)
     {
+        ShopTableStabilizationCallbacks.EndShopSession();
+
         if (clearRoomIdentity)
             ClientShopLayoutApplier.ResetForSession();
         else
             ClientShopLayoutApplier.ResetForLevelChange();
         ShopItemLimitPlanner.ResetForSession();
+        ShopTableItemPlacementController.ResetForShop();
+        UpgradeStandSpawner.ResetForLevelChange();
+        DroneCrystalStandSpawner.ResetForLevelChange();
         ShopSceneCache.Clear();
 
         if (Plugin.DebugLogs.Value)

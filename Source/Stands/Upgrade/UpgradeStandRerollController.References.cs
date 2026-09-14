@@ -23,12 +23,20 @@ internal sealed partial class UpgradeStandRerollController
         if (scanBox == null)
             scanBox = FindChildByNameParts(transform, "inside", "box");
 
+        buttonTargetColliders = new[] { buttonRoot, buttonColliderRoot }
+            .Where(root => root != null)
+            .SelectMany(root => root.GetComponentsInChildren<Collider>(true))
+            .Where(collider => collider != null)
+            .Distinct()
+            .ToArray();
+
         if (Plugin.DebugLogs.Value)
         {
             if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo(
                 $"[UpgradeStandReroll.References] Resolved. " +
                 $"button={NameOrNull(buttonRoot)}, " +
                 $"buttonCollider={NameOrNull(buttonColliderRoot)}, " +
+                $"buttonTargetColliders={buttonTargetColliders.Length}, " +
                 $"scanBox={NameOrNull(scanBox)}, " +
                 $"hatch={NameOrNull(hatch)}, " +
                 $"compartment={NameOrNull(upgradeCompartment)}, " +

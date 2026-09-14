@@ -13,66 +13,67 @@
   <ItemGroup>
     <Compile Remove="Source_OLD\**\*.cs" />
     <Compile Remove="dist\**\*.cs" />
+    <Compile Remove="Tests\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- BepInEx and Harmony from BepInEx/core -->
     <Reference Include="BepInEx">
-      <HintPath>D:\Games\Steam\steamapps\common\REPO\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExCorePath)\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>D:\Games\Steam\steamapps\common\REPO\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExCorePath)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- Unity assemblies -->
     <Reference Include="UnityEngine">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\GameAssets\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(GameManagedPath)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- Game assemblies -->
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\GameAssets\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(GameManagedPath)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
     <!-- Photon assemblies -->
     <Reference Include="Photon3Unity3D">
-      <HintPath>..\..\GameAssets\Managed\Photon3Unity3D.dll</HintPath>
+      <HintPath>$(GameManagedPath)\Photon3Unity3D.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="PhotonUnityNetworking">
-      <HintPath>..\..\GameAssets\Managed\PhotonUnityNetworking.dll</HintPath>
+      <HintPath>$(GameManagedPath)\PhotonUnityNetworking.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="PhotonRealtime">
-      <HintPath>..\..\GameAssets\Managed\PhotonRealtime.dll</HintPath>
+      <HintPath>$(GameManagedPath)\PhotonRealtime.dll</HintPath>
       <Private>false</Private>
     </Reference>
 

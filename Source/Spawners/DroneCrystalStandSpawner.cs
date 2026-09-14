@@ -24,6 +24,12 @@ public static class DroneCrystalStandSpawner
 
     private static GameObject _cachedPrefab;
     private static bool _prefabPrepared;
+    private static GameObject _spawnedStand;
+
+    internal static void ResetForLevelChange()
+    {
+        _spawnedStand = null;
+    }
 
     public static bool EnsurePrefabPrepared()
     {
@@ -80,33 +86,39 @@ public static class DroneCrystalStandSpawner
 
         // Prepare area
         var disabledObjects = new List<string>();
-        if (!PrepareArea(position, rotation, candyShelf2, disabledObjects))
+        try
         {
-            Plugin.Log.LogWarning("[DroneCrystalStandSpawner] Area preparation failed.");
-            return false;
-        }
-
-        spawnedStand = Object.Instantiate(_cachedPrefab, position, rotation);
-        spawnedStand.name = "MoreStandsForShops Drone Crystal Stand";
-        spawnedStand.SetActive(true);
-
-        // Parent to PROPS
-        spawnedStand.transform.SetParent(props, true);
-
-        // Disable Candy Shelf 2
-        candyShelf2.gameObject.SetActive(false);
-        disabledObjects.Add(GetTransformPath(candyShelf2));
-
-        if (configureItemVolumes)
-            ItemVolumeHelper.AssignVolumesForDroneCrystalStand(spawnedStand);
-        else
-            DisableItemVolumes(spawnedStand);
-
-        if (configureItemVolumes && SemiFunc.IsMultiplayer() && Photon.Pun.PhotonNetwork.IsMasterClient)
-        {
-            ShopLayoutSync.SetDroneCrystalShelf(new DroneCrystalShelfLayout
+            if (!PrepareArea(position, rotation, candyShelf2, disabledObjects))
             {
-                Enabled = true,
+                Plugin.Log.LogWarning("[DroneCrystalStandSpawner] Area preparation failed.");
+                return false;
+            }
+
+            spawnedStand = Object.Instantiate(_cachedPrefab, position, rotation);
+            spawnedStand.name = "MoreStandsForShops Drone Crystal Stand";
+            StandNetworkSafety.DisableInheritedPhotonViews(
+                spawnedStand,
+                "DroneCrystalStandSpawner",
+                includeChildren: false);
+
+            // Parent to PROPS before activation so clients never observe an unparented frame.
+            spawnedStand.transform.SetParent(props, true);
+            spawnedStand.SetActive(true);
+            _spawnedStand = spawnedStand;
+
+            // Disable Candy Shelf 2
+            candyShelf2.gameObject.SetActive(false);
+            disabledObjects.Add(GetTransformPath(candyShelf2));
+
+            if (configureItemVolumes)
+                ItemVolumeHelper.AssignVolumesForDroneCrystalStand(spawnedStand);
+            else
+                DisableItemVolumes(spawnedStand);
+
+            if (configureItemVolumes && SemiFunc.IsMultiplayer() && Photon.Pun.PhotonNetwork.IsMasterClient &&
+                !ShopLayoutSync.SetDroneCrystalShelf(new DroneCrystalShelfLayout
+                {
+                    Enabled = true,
                     DroneSlotCount = Plugin.ItemCounts.TryGetValue("Drones", out var drones)
                         ? drones.Value
                         : 0,
@@ -114,7 +126,19 @@ public static class DroneCrystalStandSpawner
                         ? crystals.Value
                         : 0,
                     DisabledPaths = disabledObjects.ToArray()
-            });
+                }))
+            {
+                throw new System.InvalidOperationException("Failed to publish drone/crystal shelf layout to the Photon room.");
+            }
+        }
+        catch
+        {
+            if (spawnedStand != null)
+                Object.Destroy(spawnedStand);
+
+            _spawnedStand = null;
+            ScenePathUtility.RestoreExactPaths(disabledObjects, "[DroneCrystalStandSpawner:Rollback]");
+            throw;
         }
 
         if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Drone/Crystal stand spawned successfully. itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}.");
@@ -152,9 +176,14 @@ public static class DroneCrystalStandSpawner
 
         GameObject spawnedStand = Object.Instantiate(_cachedPrefab, position, rotation);
         spawnedStand.name = "MoreStandsForShops Drone Crystal Stand";
-        spawnedStand.SetActive(true);
+        StandNetworkSafety.DisableInheritedPhotonViews(
+            spawnedStand,
+            "DroneCrystalStandSpawner:Network",
+            includeChildren: false);
         spawnedStand.transform.SetParent(props, true);
         DisableItemVolumes(spawnedStand);
+        spawnedStand.SetActive(true);
+        _spawnedStand = spawnedStand;
 
         if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Network visual spawned: id={spawnId}, parent={GetTransformPath(props)}.");
         return true;
@@ -162,14 +191,19 @@ public static class DroneCrystalStandSpawner
 
     private static GameObject FindExistingSpawnedStand()
     {
+        if (_spawnedStand != null && _spawnedStand.activeInHierarchy)
+            return _spawnedStand;
+
         UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
-        return Resources.FindObjectsOfTypeAll<Transform>()
+        _spawnedStand = ShopSceneCache.Current.Transforms
             .Where(t => t != null && t.gameObject.activeInHierarchy)
             .Where(t => t.gameObject.scene == activeScene)
             .Where(t => t.name.StartsWith("MoreStandsForShops Drone Crystal Stand", System.StringComparison.OrdinalIgnoreCase))
             .Select(t => t.gameObject)
             .FirstOrDefault();
+
+        return _spawnedStand;
     }
 
     private static bool PreparePrefab()
@@ -182,12 +216,25 @@ public static class DroneCrystalStandSpawner
             return false;
         }
 
-        _cachedPrefab = Object.Instantiate(healthShelf.gameObject);
+        _cachedPrefab = StandNetworkSafety.CloneVanillaSceneVisual(
+            healthShelf.gameObject,
+            "DroneCrystalStandSpawner:PrefabClone");
+        if (_cachedPrefab == null)
+        {
+            Plugin.Log.LogError("[DroneCrystalStandSpawner] Failed to clone the vanilla shelf visual safely.");
+            return false;
+        }
+
         _cachedPrefab.name = "MoreStandsForShops_DroneCrystalStand_Prefab";
         _cachedPrefab.SetActive(false);
         Object.DontDestroyOnLoad(_cachedPrefab);
 
-        // Remove PhotonView if present
+        // Preserve the visual hierarchy, but make copied vanilla networking inert
+        // before any usable stand clone can be activated.
+        StandNetworkSafety.DisableInheritedPhotonViews(
+            _cachedPrefab,
+            "DroneCrystalStandSpawner:Prefab",
+            includeChildren: false);
         var pv = _cachedPrefab.GetComponent<Photon.Pun.PhotonView>();
         if (pv != null) Object.Destroy(pv);
 
@@ -257,6 +304,7 @@ public static class DroneCrystalStandSpawner
         Vector3 halfExtents = new(0.85f, 1.10f, 0.55f);
         Vector3 center = position + Vector3.up * halfExtents.y;
 
+        var disableTargets = new HashSet<Transform>();
         Collider[] overlaps = Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in overlaps)
         {
@@ -277,19 +325,27 @@ public static class DroneCrystalStandSpawner
                 return false;
             }
 
-            // Disable decorative objects (candy shelves, props)
-            if (!IsProtected(col.transform))
-            {
-                Transform disableTarget = FindDecorativeDisableRoot(col.transform);
-                if (disableTarget == null || IsProtected(disableTarget) || IsUnsafeDisableRoot(disableTarget))
-                    continue;
+            Transform disableTarget = FindDecorativeDisableRoot(col.transform);
+            if (disableTarget == null || IsProtected(disableTarget) || IsUnsafeDisableRoot(disableTarget))
+                continue;
 
-                disableTarget.gameObject.SetActive(false);
-                disabledObjects.Add(GetTransformPath(disableTarget));
-                if (Plugin.DebugLogs.Value)
-                    Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Disabled: {GetTransformPath(disableTarget)}");
-            }
+            disableTargets.Add(disableTarget);
         }
+
+        // Validation above is read-only. Mutate the scene only after every overlap
+        // has been proven safe so a late protected object cannot leave partial state.
+        foreach (Transform disableTarget in disableTargets)
+        {
+            if (disableTarget == null || !disableTarget.gameObject.activeSelf)
+                continue;
+
+            string path = GetTransformPath(disableTarget);
+            disableTarget.gameObject.SetActive(false);
+            disabledObjects.Add(path);
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"[DroneCrystalStandSpawner] Disabled: {path}");
+        }
+
         return true;
     }
 

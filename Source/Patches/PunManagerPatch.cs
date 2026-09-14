@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using MoreStandsForShops.Shop;
 using MoreStandsForShops.Spawners;
 using MoreStandsForShops.Utilities;
 
@@ -17,7 +19,9 @@ internal static class PunManagerPatch
             return;
         }
 
-        ShopSpawnFlow.PrepareBeforeVanillaPopulate(__instance);
+        RunCustomizationStep(
+            "prepare custom shop population",
+            () => ShopSpawnFlow.PrepareBeforeVanillaPopulate(__instance));
     }
 
     [HarmonyPostfix]
@@ -29,7 +33,11 @@ internal static class PunManagerPatch
             return;
         }
 
-        UpgradeStandSpawner.SchedulePostPopulateCartOverlapRecheck();
+        RunCustomizationStep("audit populated shop", ShopSpawnFlow.LogPostPopulateResults);
+        RunCustomizationStep("finalize table stabilization", ShopTableItemPlacementController.FinalizePopulation);
+        RunCustomizationStep(
+            "schedule cart overlap recheck",
+            UpgradeStandSpawner.SchedulePostPopulateCartOverlapRecheck);
     }
 
 
@@ -47,10 +55,19 @@ internal static class PunManagerPatch
             return true;
         }
 
-        if (ShopSpawnFlow.TryHandleSpawnShopItem(__instance, itemVolume, itemList, ref spawnCount, isSecret, out bool result))
+        try
         {
-            __result = result;
-            return false;
+            if (ShopSpawnFlow.TryHandleSpawnShopItem(__instance, itemVolume, itemList, ref spawnCount, isSecret, out bool result))
+            {
+                __result = result;
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogError(
+                $"[PunManagerPatch] Custom SpawnShopItem handling failed; using vanilla for this slot. {ex}");
+            return true;
         }
 
         LogTableMultiSizeSpawnCandidate(itemVolume, itemList);
@@ -69,7 +86,9 @@ internal static class PunManagerPatch
             return;
         }
 
-        ShopSpawnFlow.NoteSpawnShopItemResult(itemVolume, __result);
+        RunCustomizationStep(
+            "record adaptive table spawn",
+            () => ShopSpawnFlow.NoteSpawnShopItemResult(itemVolume, __result));
     }
     
     private static void LogTableMultiSizeSpawnCandidate(ItemVolume itemVolume, List<Item> itemList)
@@ -118,6 +137,20 @@ internal static class PunManagerPatch
             return "<null>";
 
         return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
+    }
+
+
+    private static void RunCustomizationStep(string stepName, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogError(
+                $"[PunManagerPatch] Failed to {stepName}; continuing vanilla shop flow. {ex}");
+        }
     }
     
 }

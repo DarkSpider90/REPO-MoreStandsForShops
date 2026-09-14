@@ -10,6 +10,9 @@ internal sealed partial class UpgradeStandRerollController
 
     private static readonly FieldInfo SpringVector3VelocityField =
         typeof(SpringVector3).GetField("springVelocity", BindingFlags.Instance | BindingFlags.NonPublic);
+
+    private static readonly FieldInfo SpringFloatVelocityField =
+        typeof(SpringFloat).GetField("springVelocity", BindingFlags.Instance | BindingFlags.NonPublic);
     
     private Vector3 ButtonSoundPosition => buttonRoot != null ? buttonRoot.position : transform.position;
     private Vector3 HatchSoundPosition => hatch != null ? hatch.position : transform.position;
@@ -336,7 +339,53 @@ internal sealed partial class UpgradeStandRerollController
         if (buttonRoot == null)
             return;
 
-        buttonRoot.localRotation = buttonOriginalRotation * Quaternion.Euler(0f, buttonRotationAngle, 0f);
+        Quaternion target = buttonOriginalRotation * Quaternion.Euler(0f, buttonRotationAngle, 0f);
+        if (Quaternion.Angle(buttonRoot.localRotation, target) > 0.001f)
+            buttonRoot.localRotation = target;
+    }
+
+
+    private bool ButtonSpringNeedsUpdate()
+    {
+        if (state is not (RerollState.Idle or RerollState.Broken))
+        {
+            buttonSpringActive = true;
+            return true;
+        }
+
+        if (Mathf.Abs(buttonRotationAngle - buttonRotationTarget) > 0.001f)
+        {
+            buttonSpringActive = true;
+            return true;
+        }
+
+        if (buttonRoot != null)
+        {
+            Quaternion expected = buttonOriginalRotation * Quaternion.Euler(0f, buttonRotationAngle, 0f);
+            if (Quaternion.Angle(buttonRoot.localRotation, expected) > 0.001f)
+            {
+                buttonSpringActive = true;
+                return true;
+            }
+        }
+
+        if (!buttonSpringActive)
+            return false;
+
+        if (buttonRotationSpring == null)
+            return true;
+
+        if (SpringFloatVelocityField == null)
+            return true;
+
+        object value = SpringFloatVelocityField.GetValue(buttonRotationSpring);
+        if (value is float velocity && Mathf.Abs(velocity) > 0.001f)
+            return true;
+
+        buttonRotationAngle = buttonRotationTarget;
+        buttonSpringActive = false;
+        ApplyButtonRotation();
+        return false;
     }
     
     
@@ -357,8 +406,12 @@ internal sealed partial class UpgradeStandRerollController
         if (allMeshesTransform == null || meshRotationSpring == null || meshPositionSpring == null)
             return;
 
-        if (state is RerollState.RollStart or RerollState.Rolling or RerollState.RollEnd)
+        bool activelyRolling = state is RerollState.RollStart or RerollState.Rolling or RerollState.RollEnd;
+        if (activelyRolling)
         {
+            meshSpringsActive = true;
+            meshSpringSettledFrames = 0;
+
             float rotationShakeScale = Time.deltaTime * 10f;
             float positionShakeScale = Time.deltaTime * 2f;
 
@@ -373,8 +426,53 @@ internal sealed partial class UpgradeStandRerollController
                 Random.Range(-0.8f, 0.8f)) * positionShakeScale);
         }
 
+        if (!meshSpringsActive)
+        {
+            bool externallyDisplaced =
+                Quaternion.Angle(allMeshesTransform.localRotation, allMeshesOriginalRotation) > 0.02f ||
+                (allMeshesTransform.localPosition - allMeshesOriginalPosition).sqrMagnitude > 0.000001f;
+            if (!externallyDisplaced)
+                return;
+
+            // Preserve the vanilla-derived controller contract: if another effect
+            // displaces the mesh, the spring still brings it home.
+            meshSpringsActive = true;
+        }
+
         allMeshesTransform.localRotation = SemiFunc.SpringQuaternionGet(meshRotationSpring, allMeshesOriginalRotation);
         allMeshesTransform.localPosition = SemiFunc.SpringVector3Get(meshPositionSpring, allMeshesOriginalPosition);
+
+        if (activelyRolling || !AreMeshSpringsSettled())
+        {
+            meshSpringSettledFrames = 0;
+            return;
+        }
+
+        meshSpringSettledFrames++;
+        if (meshSpringSettledFrames < 2)
+            return;
+
+        allMeshesTransform.localRotation = allMeshesOriginalRotation;
+        allMeshesTransform.localPosition = allMeshesOriginalPosition;
+        meshSpringsActive = false;
+        meshSpringSettledFrames = 0;
+    }
+
+
+    private bool AreMeshSpringsSettled()
+    {
+        if (SpringQuaternionVelocityField == null || SpringVector3VelocityField == null)
+            return false;
+
+        object rotationValue = SpringQuaternionVelocityField.GetValue(meshRotationSpring);
+        object positionValue = SpringVector3VelocityField.GetValue(meshPositionSpring);
+        if (rotationValue is not Vector3 rotationVelocity || positionValue is not Vector3 positionVelocity)
+            return false;
+
+        return Quaternion.Angle(allMeshesTransform.localRotation, allMeshesOriginalRotation) <= 0.02f &&
+               (allMeshesTransform.localPosition - allMeshesOriginalPosition).sqrMagnitude <= 0.000001f &&
+               rotationVelocity.sqrMagnitude <= 0.0001f &&
+               positionVelocity.sqrMagnitude <= 0.0001f;
     }
     
     

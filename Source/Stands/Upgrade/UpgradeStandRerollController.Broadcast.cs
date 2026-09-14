@@ -9,6 +9,7 @@ internal sealed partial class UpgradeStandRerollController
 {
     private const byte RerollSyncEvent = 187;
     private const string SyncMagic = "MSFS_REROLL_V1";
+    private const string SyncStandId = "additional-upgrade-stand";
 
     private const string MsgHoldRequestStart = "HoldRequestStart";
     private const string MsgHoldRequestStop = "HoldRequestStop";
@@ -19,6 +20,7 @@ internal sealed partial class UpgradeStandRerollController
     private const string MsgRerollVisual = "RerollVisual";
     private const string MsgBreakBuildUpVisual = "BreakBuildUpVisual";
     private const string MsgBrokenVisual = "BrokenVisual";
+    private const string MsgStateCorrection = "StateCorrection";
 
     public void OnEvent(EventData photonEvent)
     {
@@ -34,11 +36,18 @@ internal sealed partial class UpgradeStandRerollController
         if (data[1] is not string message)
             return;
 
+        if (!IsCurrentStandEvent(data))
+            return;
+
+        if (IsHostBroadcast(message) && !WasSentByCurrentMaster(photonEvent.Sender))
+            return;
+
         float progress = data.Length > 2 ? ReadProgressPayload(data[2], chargeElapsed) : chargeElapsed;
 
         if (isBroken &&
             message != MsgBrokenVisual &&
-            message != MsgBreakBuildUpVisual)
+            message != MsgBreakBuildUpVisual &&
+            message != MsgStateCorrection)
             return;
 
         if (Plugin.DebugLogs.Value)
@@ -126,6 +135,23 @@ internal sealed partial class UpgradeStandRerollController
                 if (!PhotonNetwork.IsMasterClient)
                     BreakButton();
                 return;
+
+            case MsgStateCorrection:
+                if (!PhotonNetwork.IsMasterClient)
+                {
+                    int synchronizedRerollCount = data.Length > 2
+                        ? ReadIntPayload(data[2], rerollCount)
+                        : rerollCount;
+                    int synchronizedMaxRerollCount = data.Length > 3
+                        ? ReadIntPayload(data[3], maxRerollCount)
+                        : maxRerollCount;
+                    bool synchronizedBroken = data.Length > 4 && data[4] is bool broken && broken;
+                    ApplySynchronizedState(
+                        synchronizedRerollCount,
+                        synchronizedMaxRerollCount,
+                        synchronizedBroken);
+                }
+                return;
         }
     }
 
@@ -135,8 +161,8 @@ internal sealed partial class UpgradeStandRerollController
             return;
 
         object[] payload = progress.HasValue
-            ? new object[] { SyncMagic, message, progress.Value }
-            : new object[] { SyncMagic, message };
+            ? CreateEventPayload(message, progress.Value)
+            : CreateEventPayload(message);
 
         PhotonNetwork.RaiseEvent(
             RerollSyncEvent,
@@ -151,7 +177,7 @@ internal sealed partial class UpgradeStandRerollController
         {
             PhotonNetwork.RaiseEvent(
                 RerollSyncEvent,
-                new object[] { SyncMagic, MsgRerollVisual, rerollCount, maxRerollCount },
+                CreateEventPayload(MsgRerollVisual, rerollCount, maxRerollCount),
                 new RaiseEventOptions { Receivers = ReceiverGroup.Others },
                 SendOptions.SendReliable);
         }
@@ -373,6 +399,128 @@ internal sealed partial class UpgradeStandRerollController
 
         if (Plugin.DebugLogs.Value)
             Plugin.Log.LogInfo("[UpgradeStandReroll.Sync] Broadcast break build-up visual.");
+    }
+
+
+    private void BroadcastStateCorrection()
+    {
+        if (!SemiFunc.IsMultiplayer() || !PhotonNetwork.IsMasterClient)
+            return;
+
+        PhotonNetwork.RaiseEvent(
+            RerollSyncEvent,
+            CreateEventPayload(MsgStateCorrection, rerollCount, maxRerollCount, isBroken),
+            new RaiseEventOptions { Receivers = ReceiverGroup.Others },
+            SendOptions.SendReliable);
+    }
+
+
+    private static object[] CreateEventPayload(string message, params object[] values)
+    {
+        int valueCount = values?.Length ?? 0;
+        var payload = new object[valueCount + 4];
+        payload[0] = SyncMagic;
+        payload[1] = message;
+
+        if (valueCount > 0)
+            System.Array.Copy(values, 0, payload, 2, valueCount);
+
+        payload[payload.Length - 2] = MoreStandsForShops.Network.ShopLayoutSync.GetSequence();
+        payload[payload.Length - 1] = SyncStandId;
+        return payload;
+    }
+
+
+    private static bool IsCurrentStandEvent(object[] data)
+    {
+        // Accept the previous payload shape for compatibility with an event already
+        // queued during an update, but validate every newly generated envelope.
+        if (data.Length < 4 || data[data.Length - 1] is not string standId)
+            return true;
+
+        if (data[data.Length - 2] is not int eventSequence)
+            return true;
+
+        if (!string.Equals(standId, SyncStandId, System.StringComparison.Ordinal))
+            return false;
+
+        int currentSequence = MoreStandsForShops.Network.ShopLayoutSync.GetSequence();
+        return currentSequence <= 0 || eventSequence == currentSequence;
+    }
+
+
+    private static bool IsHostBroadcast(string message)
+    {
+        return message == MsgHoldVisualStart ||
+               message == MsgHoldVisualStop ||
+               message == MsgHoldVisualProgress ||
+               message == MsgRerollVisual ||
+               message == MsgBreakBuildUpVisual ||
+               message == MsgBrokenVisual ||
+               message == MsgStateCorrection;
+    }
+
+
+    private static bool WasSentByCurrentMaster(int senderActorNumber)
+    {
+        return PhotonNetwork.MasterClient == null ||
+               PhotonNetwork.MasterClient.ActorNumber == senderActorNumber;
+    }
+
+
+    public void OnPlayerEnteredRoom(Player newPlayer)
+    {
+    }
+
+
+    public void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        if (!PhotonNetwork.IsMasterClient || otherPlayer == null ||
+            remoteHoldActorNumber != otherPlayer.ActorNumber)
+        {
+            return;
+        }
+
+        StopRemoteHoldVisual();
+        remoteHoldActorNumber = -1;
+        BroadcastHoldVisualStop();
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[UpgradeStandReroll.Sync] Released disconnected hold owner actor={otherPlayer.ActorNumber}.");
+    }
+
+
+    public void OnMasterClientSwitched(Player newMasterClient)
+    {
+        remoteHoldActorNumber = -1;
+        holdRequestSent = false;
+        activationHeld = false;
+
+        if (state is RerollState.Holding or RerollState.Rollback or RerollState.WaitingForHost)
+        {
+            remoteHoldVisual = false;
+            holdVisualBroadcasted = false;
+            StateSet(isBroken ? RerollState.Broken : RerollState.Idle);
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            ReleasePreparedReplacementsImmediately();
+            return;
+        }
+
+        RefreshSynchronizedStateForHost();
+        RecoverPendingRerollAsNewMaster();
+    }
+
+
+    public void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+    {
+    }
+
+
+    public void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+    {
     }
 
     private static float ReadProgressPayload(object data, float fallback)

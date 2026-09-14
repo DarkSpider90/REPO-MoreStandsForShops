@@ -25,23 +25,42 @@ internal sealed class ShopSceneCache
             .Where(transform => transform.gameObject.scene == scene)
             .ToArray();
 
-        ItemVolumes = Resources.FindObjectsOfTypeAll<ItemVolume>()
+        // Derive component caches from the already filtered transform snapshot. This
+        // preserves the transform discovery order while avoiding two additional
+        // Resources.FindObjectsOfTypeAll scans over the entire Unity process.
+        ItemVolumes = Transforms
+            .SelectMany(transform => transform.GetComponents<ItemVolume>())
             .Where(volume => volume != null && volume.gameObject.activeInHierarchy)
-            .Where(volume => volume.gameObject.scene == scene)
             .ToArray();
 
-        Renderers = Resources.FindObjectsOfTypeAll<Renderer>()
+        Renderers = Transforms
+            .SelectMany(transform => transform.GetComponents<Renderer>())
             .Where(renderer => renderer != null && renderer.gameObject.activeInHierarchy)
-            .Where(renderer => renderer.gameObject.scene == scene)
             .ToArray();
+
+        Dictionary<int, string> legacyPaths = Transforms.ToDictionary(
+            transform => transform.GetInstanceID(),
+            BuildPath);
+        Dictionary<string, int> legacyPathCounts = legacyPaths.Values
+            .GroupBy(path => path, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
         foreach (Transform transform in Transforms)
         {
-            string path = BuildPath(transform);
+            string legacyPath = legacyPaths[transform.GetInstanceID()];
+            string path = legacyPathCounts[legacyPath] > 1
+                ? BuildIndexedPath(legacyPath, transform)
+                : legacyPath;
             pathByInstanceId[transform.GetInstanceID()] = path;
 
             if (!transformByPath.ContainsKey(path))
                 transformByPath.Add(path, transform);
+
+            // Preserve every existing name-only lookup. When names are duplicated it
+            // intentionally retains the same first-match behavior as Transform.Find,
+            // while synchronized paths use the indexed key above.
+            if (!transformByPath.ContainsKey(legacyPath))
+                transformByPath.Add(legacyPath, transform);
         }
 
         if (Plugin.DebugLogs?.Value == true)
@@ -88,8 +107,7 @@ internal sealed class ShopSceneCache
         foreach (string candidate in GetPathCandidates(path))
         {
             if (transformByPath.TryGetValue(candidate, out Transform direct) &&
-                direct != null &&
-                direct.gameObject.activeInHierarchy)
+                direct != null)
             {
                 return direct;
             }
@@ -125,10 +143,20 @@ internal sealed class ShopSceneCache
         if (pathByInstanceId.TryGetValue(id, out string path))
             return path;
 
-        path = BuildPath(transform);
+        string legacyPath = BuildPath(transform);
+        path = legacyPath;
+        if (transformByPath.TryGetValue(legacyPath, out Transform existing) &&
+            existing != null && existing != transform)
+        {
+            path = BuildIndexedPath(legacyPath, transform);
+        }
+
         pathByInstanceId[id] = path;
         if (!transformByPath.ContainsKey(path))
             transformByPath.Add(path, transform);
+
+        if (!transformByPath.ContainsKey(legacyPath))
+            transformByPath.Add(legacyPath, transform);
 
         return path;
     }
@@ -153,5 +181,18 @@ internal sealed class ShopSceneCache
         }
 
         return string.Join("/", stack);
+    }
+
+    private static string BuildIndexedPath(string legacyPath, Transform transform)
+    {
+        var siblingIndices = new Stack<int>();
+        Transform current = transform;
+        while (current != null)
+        {
+            siblingIndices.Push(current.GetSiblingIndex());
+            current = current.parent;
+        }
+
+        return legacyPath + "|MSFSIDX:" + string.Join(".", siblingIndices);
     }
 }

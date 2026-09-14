@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace MoreStandsForShops.Utilities;
@@ -89,6 +90,40 @@ internal static class ScenePathUtility
         }
 
         return false;
+    }
+
+    public static void RestoreExactPaths(IEnumerable<string> paths, string logPrefix)
+    {
+        if (paths == null)
+            return;
+
+        // Parents must be restored before their children. Every recorded node was
+        // active before this mod disabled it, so restoring activeSelf is lossless.
+        foreach (string path in new List<string>(paths).OrderBy(PathDepth))
+        {
+            Transform target = FindTransformByPath(path);
+            if (target == null || target.gameObject.activeSelf)
+                continue;
+
+            target.gameObject.SetActive(true);
+            if (Plugin.DebugLogs.Value)
+                Plugin.Log.LogInfo($"{logPrefix} Restored: {path}");
+        }
+    }
+
+    private static int PathDepth(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return 0;
+
+        int depth = 1;
+        foreach (char character in path)
+        {
+            if (character == '/')
+                depth++;
+        }
+
+        return depth;
     }
 
 }

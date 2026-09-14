@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Text;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using MoreStandsForShops.Network;
 
 namespace MoreStandsForShops;
 
@@ -122,8 +125,8 @@ public class Plugin : BaseUnityPlugin
         // ========== General ==========
         EnableMod = Config.Bind("General", "Enable Mod", true, "Enable or disable the entire mod.");
         EnableAdditionalUpgradeStand = Config.Bind("General", "Enable Additional Upgrade Stand", true, "Spawn a second upgrade stand in the shop.");
-        EnableVanillaShelfTableRewrite = Config.Bind("General", "Enable Vanilla Shelf Table Rewrite", true, "Move grenades to the lower health shelf while preserving the exact vanilla table item placements for stable physics.");
-        DisableShopPoolLimit = Config.Bind("General", "Disable Shop Pool Limit", true, "Raise vanilla shop spawn budget to the filtered item pool size so free matching slots keep trying to fill.");
+        EnableVanillaShelfTableRewrite = Config.Bind("General", "Enable Vanilla Shelf Table Rewrite", true, "Move grenades to the lower health shelf and give vanilla table places safe adaptive item-size slots.");
+        DisableShopPoolLimit = Config.Bind("General", "Disable Shop Pool Limit", true, "Attempt the complete configured current-shop pool instead of applying vanilla's accumulated purchase-based pool limit.");
         DebugLogs = Config.Bind("General", "Debug Logs", false, "Enable detailed debug logging for troubleshooting.");
 
         // ========== Item Counts ==========
@@ -169,11 +172,9 @@ public class Plugin : BaseUnityPlugin
             BindItemSpawnChanceConfig(itemName, ref createdAny);
         }
 
-        if (createdAny)
-        {
-            Instance.Config.Save();
-            Log.LogInfo($"Created vanilla item spawn chance config entries for {ItemSpawnChances.Count} items.");
-        }
+        SaveItemSpawnChanceConfigs(
+            createdAny,
+            $"Created vanilla item spawn chance config entries for {ItemSpawnChances.Count} items.");
     }
 
     internal static void EnsureItemSpawnChanceConfigs(IEnumerable<Item> items)
@@ -191,15 +192,12 @@ public class Plugin : BaseUnityPlugin
                 continue;
             }
 
-            string key = ItemConfigName(item);
-            BindItemSpawnChanceConfig(key, ref createdAny);
+            BindItemSpawnChanceConfig(ItemConfigName(item), ref createdAny);
         }
 
-        if (createdAny)
-        {
-            Instance.Config.Save();
-            Log.LogInfo($"Created/updated item spawn chance config entries for {ItemSpawnChances.Count} items.");
-        }
+        SaveItemSpawnChanceConfigs(
+            createdAny,
+            $"Created/updated item spawn chance config entries for {ItemSpawnChances.Count} items.");
     }
 
     internal static int GetItemSpawnChance(Item item)
@@ -213,19 +211,115 @@ public class Plugin : BaseUnityPlugin
         return ItemSpawnChances.TryGetValue(key, out ConfigEntry<int> entry) ? entry.Value : 100;
     }
 
-    private static void BindItemSpawnChanceConfig(string key, ref bool createdAny)
+    private static void BindItemSpawnChanceConfig(string itemName, ref bool createdAny)
     {
-        if (string.IsNullOrWhiteSpace(key) || ItemSpawnChances.ContainsKey(key))
+        if (string.IsNullOrWhiteSpace(itemName) || ItemSpawnChances.ContainsKey(itemName))
         {
             return;
         }
 
-        ItemSpawnChances[key] = Instance.Config.Bind(
-            "Item Spawn Chances",
-            key,
-            100,
-            new ConfigDescription("Relative spawn chance/weight for this exact item. 0 disables it in this mod's shop pools; 100 is default.", new AcceptableValueRange<int>(0, 100)));
-        createdAny = true;
+        string configKey = BuildItemSpawnChanceConfigKey(itemName);
+
+        try
+        {
+            ConfigEntry<int> entry = Instance.Config.Bind(
+                "Item Spawn Chances",
+                configKey,
+                100,
+                new ConfigDescription(
+                    $"Relative spawn chance/weight for '{PrintableItemName(itemName)}'. 0 disables it in this mod's shop pools; 100 is default.",
+                    new AcceptableValueRange<int>(0, 100)));
+
+            ItemSpawnChances[itemName] = entry;
+            createdAny = true;
+
+            if (DebugLogs?.Value == true && !string.Equals(configKey, itemName, StringComparison.Ordinal))
+                Log.LogInfo($"[Config] Unsafe item name mapped to config key '{configKey}'.");
+        }
+        catch (Exception ex)
+        {
+            // A malformed third-party item name or a single broken config entry must
+            // never abort ShopInitialize. The item keeps the default weight of 100.
+            Log.LogWarning(
+                $"[Config] Could not create spawn chance setting for '{PrintableItemName(itemName)}'. " +
+                $"Using default weight 100. {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private static string BuildItemSpawnChanceConfigKey(string itemName)
+    {
+        string trimmed = itemName.Trim();
+        bool requiresSanitizing = !string.Equals(trimmed, itemName, StringComparison.Ordinal);
+
+        foreach (char character in trimmed)
+        {
+            if (IsInvalidConfigKeyCharacter(character))
+            {
+                requiresSanitizing = true;
+                break;
+            }
+        }
+
+        if (!requiresSanitizing)
+            return itemName;
+
+        var safeName = new StringBuilder(trimmed.Length);
+        foreach (char character in trimmed)
+            safeName.Append(IsInvalidConfigKeyCharacter(character) ? ' ' : character);
+
+        string prefix = safeName.ToString().Trim();
+        if (string.IsNullOrWhiteSpace(prefix))
+            prefix = "Unnamed Item";
+
+        return $"{prefix} (MSFS-{StableConfigHash(itemName):X8})";
+    }
+
+    private static bool IsInvalidConfigKeyCharacter(char character)
+    {
+        return character is '=' or '\n' or '\t' or '\\' or '"' or '\'' or '[' or ']' ||
+               char.IsControl(character);
+    }
+
+    private static uint StableConfigHash(string value)
+    {
+        unchecked
+        {
+            uint hash = 2166136261;
+            foreach (char character in value)
+            {
+                hash ^= character;
+                hash *= 16777619;
+            }
+
+            return hash;
+        }
+    }
+
+    private static string PrintableItemName(string itemName)
+    {
+        var printable = new StringBuilder(itemName.Length);
+        foreach (char character in itemName)
+            printable.Append(char.IsControl(character) ? ' ' : character);
+
+        return printable.ToString().Trim();
+    }
+
+    private static void SaveItemSpawnChanceConfigs(bool createdAny, string successMessage)
+    {
+        if (!createdAny)
+            return;
+
+        try
+        {
+            Instance.Config.Save();
+            Log.LogInfo(successMessage);
+        }
+        catch (Exception ex)
+        {
+            Log.LogWarning(
+                $"[Config] Spawn chance settings were created in memory but could not be saved. " +
+                $"Shop initialization will continue. {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     private static string ItemConfigName(Item item)

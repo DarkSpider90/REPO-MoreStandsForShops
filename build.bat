@@ -2,7 +2,7 @@
 echo Building MoreStandsForShops...
 dotnet build MoreStandsForShops.csproj -c Release
 if %errorlevel% equ 0 (
-    echo Build successful! Output: bin\Release\netstandard2.1\MoreStandsForShops.dll
+    echo Build successful! Output: bin\Release\MoreStandsForShops.dll
 ) else (
     echo Build failed.
 )

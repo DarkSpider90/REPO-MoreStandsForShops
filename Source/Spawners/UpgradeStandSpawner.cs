@@ -14,6 +14,37 @@ public static class UpgradeStandSpawner
     private static GameObject _cachedPrefab;
     private static bool _prefabPrepared;
     private static readonly RaycastHit[] WallHits = new RaycastHit[16];
+    private static readonly Collider[] CartOverlapHits = new Collider[256];
+    private static readonly HashSet<Transform> CartAuditCandidates = new();
+    private static readonly HashSet<Transform> MovedCartTargets = new();
+    private static readonly List<Transform> CachedCartCandidates = new();
+    private static GameObject _spawnedStand;
+    private static Coroutine _cartRecheckRoutine;
+    private static bool _shopPopulationCompleted;
+    private static bool _cartCandidatesCached;
+
+
+    internal static void ResetForLevelChange()
+    {
+        _spawnedStand = null;
+
+        ResetForShop();
+    }
+
+
+    internal static void ResetForShop()
+    {
+
+        if (_cartRecheckRoutine != null && Plugin.Instance != null)
+            Plugin.Instance.StopCoroutine(_cartRecheckRoutine);
+
+        _cartRecheckRoutine = null;
+        _shopPopulationCompleted = false;
+        _cartCandidatesCached = false;
+        CachedCartCandidates.Clear();
+        CartAuditCandidates.Clear();
+        MovedCartTargets.Clear();
+    }
 
 
     public static bool EnsurePrefabPrepared()
@@ -92,24 +123,32 @@ public static class UpgradeStandSpawner
                 continue;
             }
 
-            // Disable known preset blockers first, then run a final direct-overlap cleanup as a safety net.
-            List<string> disabledObjects = ScenePathUtility.DisableExactPaths(point.DisablePaths, "[UpgradeStandSpawner]");
-            disabledObjects.AddRange(DisableMovableOverlaps(position, rotation));
+            var disabledObjects = new List<string>();
 
-            spawnedStand = Object.Instantiate(_cachedPrefab, position, rotation);
-            spawnedStand.name = "MoreStandsForShops Upgrade Stand";
-            spawnedStand.SetActive(true);
-            spawnedStand.transform.SetParent(module, true);
+            try
+            {
+                // Mutations are recorded so every later failure can restore the
+                // exact active objects that were present before this attempt.
+                disabledObjects.AddRange(
+                    ScenePathUtility.DisableExactPaths(point.DisablePaths, "[UpgradeStandSpawner]"));
+                disabledObjects.AddRange(DisableMovableOverlaps(position, rotation));
 
-            if (configureItemVolumes)
-                ConfigureUpgradeVolumes(spawnedStand);
-            else
-                DisableItemVolumes(spawnedStand);
+                spawnedStand = Object.Instantiate(_cachedPrefab, position, rotation);
+                spawnedStand.name = "MoreStandsForShops Upgrade Stand";
+                StandNetworkSafety.DisableInheritedPhotonViews(spawnedStand, "UpgradeStandSpawner");
+                spawnedStand.transform.SetParent(module, true);
+                spawnedStand.SetActive(true);
+                _spawnedStand = spawnedStand;
 
-            if (configureItemVolumes && SemiFunc.IsMultiplayer() && Photon.Pun.PhotonNetwork.IsMasterClient)
-                ShopLayoutSync.SetUpgradeStand(new UpgradeStandLayout
-                {
-                    Enabled = true,
+                if (configureItemVolumes)
+                    ConfigureUpgradeVolumes(spawnedStand);
+                else
+                    DisableItemVolumes(spawnedStand);
+
+                if (configureItemVolumes && SemiFunc.IsMultiplayer() && Photon.Pun.PhotonNetwork.IsMasterClient &&
+                    !ShopLayoutSync.SetUpgradeStand(new UpgradeStandLayout
+                    {
+                        Enabled = true,
                         VariantId = point.VariantId,
                         Position = position,
                         Rotation = rotation,
@@ -121,9 +160,23 @@ public static class UpgradeStandSpawner
                         RerollCount = 0,
                         MaxRerollCount = -1,
                         RerollBroken = false
-                });
+                    }))
+                {
+                    throw new System.InvalidOperationException("Failed to publish upgrade stand layout to the Photon room.");
+                }
+            }
+            catch
+            {
+                if (spawnedStand != null)
+                    Object.Destroy(spawnedStand);
+
+                _spawnedStand = null;
+                ScenePathUtility.RestoreExactPaths(disabledObjects, "[UpgradeStandSpawner:Rollback]");
+                throw;
+            }
 
             if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Successfully spawned additional upgrade stand: variant={point.VariantId}, sourceCount={point.SourceCount}, main={point.MainModule}, local={point.LocalPosition}, world={position}, yaw={point.LocalYaw}, itemVolumes={configureItemVolumes}, disabled={disabledObjects.Count}, protectPainting={protectPaintingObjects}.");
+            TryMoveCartOverlaps(position, rotation);
             SchedulePresetBlockerRecheck(point.DisablePaths, "[UpgradeStandSpawner:Delayed]");
             ScheduleMagazineDisplayRecheck(position, rotation);
             ScheduleCartOverlapRecheck(position, rotation);
@@ -164,9 +217,11 @@ public static class UpgradeStandSpawner
 
         GameObject spawnedStand = Object.Instantiate(_cachedPrefab, position, rotation);
         spawnedStand.name = $"MoreStandsForShops Upgrade Stand {variantId}";
-        spawnedStand.SetActive(true);
+        StandNetworkSafety.DisableInheritedPhotonViews(spawnedStand, "UpgradeStandSpawner:Network");
         spawnedStand.transform.SetParent(parent, true);
         DisableItemVolumes(spawnedStand);
+        spawnedStand.SetActive(true);
+        _spawnedStand = spawnedStand;
         ApplyRerollState(spawnedStand, rerollCount, maxRerollCount, rerollBroken);
 
         if (Plugin.DebugLogs.Value) Plugin.Log.LogInfo($"[UpgradeStandSpawner] Network visual spawned: id={spawnId}, variant={variantId}, parent={parentPath}.");
@@ -239,11 +294,13 @@ public static class UpgradeStandSpawner
         if (Plugin.Instance == null || !SemiFunc.IsMasterClientOrSingleplayer())
             return;
 
-        Plugin.Instance.StartCoroutine(RecheckCartOverlapsRoutine(position, rotation));
+        EnsureCartOverlapRecheck(position, rotation);
     }
 
     public static void SchedulePostPopulateCartOverlapRecheck()
     {
+        _shopPopulationCompleted = true;
+
         if (Plugin.Instance == null || !SemiFunc.IsMasterClientOrSingleplayer())
             return;
 
@@ -251,35 +308,64 @@ public static class UpgradeStandSpawner
         if (stand == null)
             return;
 
-        Plugin.Instance.StartCoroutine(RecheckCartOverlapsRoutine(stand.transform.position, stand.transform.rotation));
+        EnsureCartOverlapRecheck(stand.transform.position, stand.transform.rotation);
+    }
+
+    private static void EnsureCartOverlapRecheck(Vector3 position, Quaternion rotation)
+    {
+        if (_cartRecheckRoutine != null || Plugin.Instance == null)
+            return;
+
+        _cartRecheckRoutine = Plugin.Instance.StartCoroutine(RecheckCartOverlapsRoutine(position, rotation));
     }
 
     private static IEnumerator RecheckCartOverlapsRoutine(Vector3 position, Quaternion rotation)
     {
         yield return new WaitForSeconds(0.25f);
-        MoveCartOverlaps(position, rotation);
+        if (ShouldStopCartRechecks(TryMoveCartOverlaps(position, rotation)))
+            yield break;
 
         yield return new WaitForSeconds(1f);
-        MoveCartOverlaps(position, rotation);
+        if (ShouldStopCartRechecks(TryMoveCartOverlaps(position, rotation)))
+            yield break;
 
         yield return new WaitForSeconds(2f);
-        MoveCartOverlaps(position, rotation);
+        if (ShouldStopCartRechecks(TryMoveCartOverlaps(position, rotation)))
+            yield break;
 
         yield return new WaitForSeconds(4f);
-        MoveCartOverlaps(position, rotation);
+        if (ShouldStopCartRechecks(TryMoveCartOverlaps(position, rotation)))
+            yield break;
 
         yield return new WaitForSeconds(7f);
-        MoveCartOverlaps(position, rotation);
+        TryMoveCartOverlaps(position, rotation);
+
+        _cartRecheckRoutine = null;
+    }
+
+
+    private static bool ShouldStopCartRechecks(int movedCount)
+    {
+        if (!_shopPopulationCompleted || movedCount != 0)
+            return false;
+
+        _cartRecheckRoutine = null;
+        return true;
     }
 
 
     private static GameObject FindExistingSpawnedStand()
     {
-        return Resources.FindObjectsOfTypeAll<Transform>()
+        if (_spawnedStand != null && _spawnedStand.activeInHierarchy)
+            return _spawnedStand;
+
+        _spawnedStand = ShopSceneCache.Current.Transforms
             .Where(t => t != null && t.gameObject.activeInHierarchy)
             .Where(t => t.name.StartsWith("MoreStandsForShops Upgrade Stand", System.StringComparison.OrdinalIgnoreCase))
             .Select(t => t.gameObject)
             .FirstOrDefault();
+
+        return _spawnedStand;
     }
 
 
@@ -518,10 +604,22 @@ public static class UpgradeStandSpawner
             return false;
         }
 
-        _cachedPrefab = Object.Instantiate(original.gameObject);
+        _cachedPrefab = StandNetworkSafety.CloneVanillaSceneVisual(
+            original.gameObject,
+            "UpgradeStandSpawner:PrefabClone");
+        if (_cachedPrefab == null)
+        {
+            Plugin.Log.LogError("[UpgradeStandSpawner] Failed to clone the vanilla upgrade stand visual safely.");
+            return false;
+        }
+
         _cachedPrefab.name = "MoreStandsForShops_UpgradeStand_Prefab";
         _cachedPrefab.SetActive(false);
         Object.DontDestroyOnLoad(_cachedPrefab);
+
+        // The stand is synchronized by room properties and our event controller.
+        // Keep all visual components, but never let copied vanilla PhotonViews run.
+        StandNetworkSafety.DisableInheritedPhotonViews(_cachedPrefab, "UpgradeStandSpawner:Prefab");
 
         // Keep vanilla visual, but replace vanilla UpgradeStand logic with our safe controller.
         var standComp = _cachedPrefab.GetComponent<UpgradeStand>();
@@ -604,6 +702,9 @@ public static class UpgradeStandSpawner
         Vector3 center = position + Vector3.up * halfExtents.y;
         Bounds standBounds = BuildWorldBounds(center, halfExtents, rotation, 0.03f);
 
+        if (HasCartSpawnVolumeOverlap(position, rotation, out objectName))
+            return true;
+
         Collider[] overlaps = Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in overlaps)
         {
@@ -653,6 +754,39 @@ public static class UpgradeStandSpawner
         }
 
         return false;
+    }
+
+
+    private static bool HasCartSpawnVolumeOverlap(
+        Vector3 standPosition,
+        Quaternion standRotation,
+        out string objectName)
+    {
+        objectName = null;
+        Quaternion inverseRotation = Quaternion.Inverse(standRotation);
+
+        foreach (ItemVolume volume in ShopSceneCache.Current.ItemVolumes)
+        {
+            if (volume == null || !volume.gameObject.activeInHierarchy || !IsCartSpawnVolume(volume.itemVolume))
+                continue;
+
+            Vector3 local = inverseRotation * (volume.transform.position - standPosition);
+            if (Mathf.Abs(local.x) > 1.65f || Mathf.Abs(local.z) > 1.35f || local.y < -0.35f || local.y > 2.75f)
+                continue;
+
+            objectName = $"cart spawn volume {GetTransformPath(volume.transform)} ({volume.itemVolume})";
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private static bool IsCartSpawnVolume(SemiFunc.itemVolume itemVolume)
+    {
+        return itemVolume is SemiFunc.itemVolume.large_wide or
+               SemiFunc.itemVolume.large_plus or
+               SemiFunc.itemVolume.vehicle;
     }
 
 
@@ -727,8 +861,6 @@ public static class UpgradeStandSpawner
         HashSet<Transform> disabledTargets = new();
         var disabledPaths = new List<string>();
 
-        MoveCartOverlaps(position, rotation);
-
         Collider[] overlaps = Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in overlaps)
         {
@@ -770,32 +902,110 @@ public static class UpgradeStandSpawner
         return disabledPaths;
     }
 
+    private static int TryMoveCartOverlaps(Vector3 position, Quaternion rotation)
+    {
+        try
+        {
+            return MoveCartOverlaps(position, rotation);
+        }
+        catch (System.Exception ex)
+        {
+            // The stand is already valid and published. A third-party cart failure
+            // must not roll back or suppress the rest of the shop functionality.
+            Plugin.Log.LogError($"[UpgradeStandSpawner] Cart overlap correction failed safely. {ex}");
+            return -1;
+        }
+    }
+
+
     private static int MoveCartOverlaps(Vector3 position, Quaternion rotation)
     {
-        Vector3 halfExtents = new(1.20f, 1.15f, 0.85f);
+        Vector3 halfExtents = new(1.35f, 1.25f, 1.00f);
         Vector3 center = position + Vector3.up * halfExtents.y;
         Bounds standBounds = BuildWorldBounds(center, halfExtents, rotation, 0.05f);
-        Vector3 moveDirection = GetStandForward(rotation);
-        HashSet<Transform> movedTargets = new();
+        MovedCartTargets.Clear();
+        CartAuditCandidates.Clear();
 
-        Collider[] overlaps = Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore);
-        foreach (Collider col in overlaps)
+        int overlapCount = Physics.OverlapBoxNonAlloc(
+            center,
+            halfExtents,
+            CartOverlapHits,
+            rotation,
+            ~0,
+            QueryTriggerInteraction.Ignore);
+        Collider[] overflowHits = overlapCount >= CartOverlapHits.Length
+            ? Physics.OverlapBox(center, halfExtents, rotation, ~0, QueryTriggerInteraction.Ignore)
+            : null;
+        int candidateHitCount = overflowHits?.Length ?? overlapCount;
+
+        for (int i = 0; i < candidateHitCount; i++)
         {
+            Collider col = overflowHits != null ? overflowHits[i] : CartOverlapHits[i];
+            if (overflowHits == null)
+                CartOverlapHits[i] = null;
+
             if (col == null || col.transform == null)
                 continue;
 
             Transform moveTarget = FindCartMoveRoot(col.transform);
-            if (moveTarget == null || movedTargets.Contains(moveTarget))
-                continue;
-
-            if (!TryGetCombinedObjectBounds(moveTarget, out Bounds cartBounds) || !cartBounds.Intersects(standBounds))
-                continue;
-
-            Vector3 moveOffset = CalculateCartMoveOffset(standBounds, cartBounds, moveDirection);
-            MoveCartTarget(moveTarget, moveOffset, movedTargets);
+            if (moveTarget != null)
+                CartAuditCandidates.Add(moveTarget);
         }
 
-        return movedTargets.Count;
+        if (_shopPopulationCompleted && !_cartCandidatesCached)
+        {
+            _cartCandidatesCached = true;
+            CachedCartCandidates.Clear();
+
+            foreach (PhysGrabObject grabObject in Object.FindObjectsOfType<PhysGrabObject>())
+            {
+                if (grabObject == null || !grabObject.gameObject.activeInHierarchy)
+                    continue;
+
+                ItemAttributes attributes = grabObject.GetComponent<ItemAttributes>();
+                PhysGrabCart cart = grabObject.GetComponent<PhysGrabCart>();
+                if (cart != null || (attributes != null && IsMovableCartItem(attributes.item)))
+                    CachedCartCandidates.Add(grabObject.transform);
+            }
+        }
+
+        foreach (Transform cachedCandidate in CachedCartCandidates)
+        {
+            if (cachedCandidate != null && cachedCandidate.gameObject.activeInHierarchy)
+                CartAuditCandidates.Add(cachedCandidate);
+        }
+
+        int candidateCount = CartAuditCandidates.Count;
+        foreach (Transform moveTarget in CartAuditCandidates)
+        {
+            if (moveTarget == null || MovedCartTargets.Contains(moveTarget))
+                continue;
+
+            Vector3 horizontalDelta = Vector3.ProjectOnPlane(moveTarget.position - position, Vector3.up);
+            if (horizontalDelta.sqrMagnitude > 12.25f)
+                continue;
+
+            if (!TryGetPhysicalCartBounds(moveTarget, out Bounds cartBounds) || !cartBounds.Intersects(standBounds))
+                continue;
+
+            Vector3 moveDirection = Vector3.ProjectOnPlane(
+                cartBounds.center - standBounds.center,
+                Vector3.up);
+            if (moveDirection.sqrMagnitude < 0.01f)
+                moveDirection = GetStandForward(rotation);
+            else
+                moveDirection.Normalize();
+
+            Vector3 moveOffset = CalculateCartMoveOffset(standBounds, cartBounds, moveDirection);
+            MoveCartTarget(moveTarget, moveOffset, MovedCartTargets);
+        }
+
+        if (Plugin.DebugLogs.Value && candidateCount > 0)
+            Plugin.Log.LogInfo(
+                $"[UpgradeStandSpawner] Cart overlap audit: candidates={candidateCount}, " +
+                $"moved={MovedCartTargets.Count}, stand={position}.");
+
+        return MovedCartTargets.Count;
     }
 
     private static Vector3 CalculateCartMoveOffset(Bounds standBounds, Bounds cartBounds, Vector3 moveDirection)
@@ -883,13 +1093,24 @@ public static class UpgradeStandSpawner
             return;
 
         Vector3 oldPosition = moveTarget.position;
-        moveTarget.position = oldPosition + moveOffset;
+        Vector3 newPosition = oldPosition + moveOffset;
+        Quaternion currentRotation = moveTarget.rotation;
+
+        Photon.Pun.PhotonTransformView transformView =
+            moveTarget.GetComponent<Photon.Pun.PhotonTransformView>();
+        if (transformView != null)
+            transformView.Teleport(newPosition, currentRotation);
+        else
+            moveTarget.position = newPosition;
 
         foreach (Rigidbody rb in moveTarget.GetComponentsInChildren<Rigidbody>(true))
         {
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.Sleep();
+            if (!rb.isKinematic)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.WakeUp();
+            }
         }
 
         Physics.SyncTransforms();
@@ -980,6 +1201,47 @@ public static class UpgradeStandSpawner
         foreach (Collider collider in root.GetComponentsInChildren<Collider>(true))
         {
             if (collider == null || !collider.enabled)
+                continue;
+
+            if (!hasBounds)
+            {
+                bounds = collider.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(collider.bounds);
+            }
+        }
+
+        return hasBounds;
+    }
+
+
+    private static bool TryGetPhysicalCartBounds(Transform root, out Bounds bounds)
+    {
+        bounds = default;
+        bool hasBounds = false;
+
+        foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (renderer == null || !renderer.enabled)
+                continue;
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        foreach (Collider collider in root.GetComponentsInChildren<Collider>(true))
+        {
+            if (collider == null || !collider.enabled || collider.isTrigger)
                 continue;
 
             if (!hasBounds)

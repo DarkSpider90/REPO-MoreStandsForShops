@@ -14,10 +14,12 @@ internal static class ShopBudgetPlanner
         shopManager.itemSpawnTargetAmount = standard;
         shopManager.itemConsumablesAmount = 0;
         shopManager.itemUpgradesAmount = GetCount("Total Upgrades");
-        shopManager.itemHealthPacksAmount = GetCount("Health Packs");
+        // Health packs are populated by ShelfSpawnController on their dedicated
+        // authored shelf, outside the vanilla shuffled ItemVolume pass.
+        shopManager.itemHealthPacksAmount = 0;
 
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop budgets set: standard={shopManager.itemSpawnTargetAmount}, vanillaCrystals={shopManager.itemConsumablesAmount}, customDrones={GetCount("Drones")}, customCrystals={GetCount("Power Crystals")}, upgrades={shopManager.itemUpgradesAmount}, health={shopManager.itemHealthPacksAmount}.");
+            Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop budgets set: standard={shopManager.itemSpawnTargetAmount}, vanillaCrystals={shopManager.itemConsumablesAmount}, customDrones={GetCount("Drones")}, customCrystals={GetCount("Power Crystals")}, upgrades={shopManager.itemUpgradesAmount}, customHealth={GetCount("Health Packs")}.");
     }
 
 
@@ -30,10 +32,14 @@ internal static class ShopBudgetPlanner
         int activeVolumes = shopManager.itemVolumes?.Count ?? 0;
         int oldTarget = shopManager.itemSpawnTargetAmount;
 
-        shopManager.itemSpawnTargetAmount = System.Math.Max(oldTarget, System.Math.Max(poolCount, activeVolumes));
+        // A spawn budget is a number of items, not a number of every kind of scene
+        // volume (upgrade, health and shelf volumes are counted separately). Keeping
+        // it at least as large as the complete standard pool guarantees that vanilla
+        // attempts every configured entry without inflating the standard counter.
+        shopManager.itemSpawnTargetAmount = System.Math.Max(oldTarget, poolCount);
 
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop pool limit disabled: standard target {oldTarget}->{shopManager.itemSpawnTargetAmount}, standardPool={poolCount}, activeVolumes={activeVolumes}.");
+            Plugin.Log.LogInfo($"[ShopBudgetPlanner] Shop pool limit disabled: standard target {oldTarget}->{shopManager.itemSpawnTargetAmount}, completeStandardPool={poolCount}, allActiveVolumes={activeVolumes}.");
     }
 
 

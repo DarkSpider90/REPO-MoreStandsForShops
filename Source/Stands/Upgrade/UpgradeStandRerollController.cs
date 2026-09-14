@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MoreStandsForShops.Stands.Upgrade;
 
-internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnEventCallback
+internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnEventCallback, IInRoomCallbacks
 {
     private enum RerollState
     {
@@ -121,6 +121,7 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
     private bool remoteHoldVisual;
     private bool holdVisualBroadcasted;
     private bool isBroken;
+    private bool replacementsCommitted;
     private bool visualOnlyReroll;
     private bool finalRollSqueakPlayed;
     private bool hatchCloseImpactPlayed;
@@ -131,6 +132,8 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
     private bool holdRequestSent;
     private bool resumeChargeFromRollback;
     private bool rollbackResumeRequested;
+    private bool buttonSpringActive;
+    private bool meshSpringsActive;
 
     private float stateTimer;
     private float stateTimerMax;
@@ -153,7 +156,9 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
 
     private readonly List<CachedUpgrade> cachedUpgrades = new();
     private readonly List<PendingReplacement> pendingReplacements = new();
+    private readonly List<PreparedReplacement> preparedReplacements = new();
     private readonly RaycastHit[] buttonCastHits = new RaycastHit[64];
+    private Collider[] buttonTargetColliders;
     
     private int rollbackTopStage;
     private int rollbackCurrentStage = -1;
@@ -161,6 +166,9 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
     private int maxRerollCount = -1;
     private int rerollTicksPlayed;
     private int remoteHoldActorNumber = -1;
+    private int activeRerollTransactionId;
+    private int pendingRerollCost;
+    private int meshSpringSettledFrames;
     private int RerollCost => 5 + rerollCount * 5;
 
     internal void ApplySynchronizedState(int synchronizedRerollCount, int synchronizedMaxRerollCount, bool synchronizedBroken)
@@ -190,6 +198,7 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
 
     private void OnDisable()
     {
+        ReleasePreparedReplacementsImmediately();
         PhotonNetwork.RemoveCallbackTarget(this);
     }
 
@@ -240,14 +249,27 @@ internal sealed partial class UpgradeStandRerollController : MonoBehaviour, IOnE
         bool buttonFocused = IsLocalPlayerLookingAtButton();
         UpdateHover(buttonFocused);
         UpdateState(buttonFocused);
-        UpdateButtonRotationSpring();
-        ApplyButtonRotation();
+
+        if (ButtonSpringNeedsUpdate())
+        {
+            UpdateButtonRotationSpring();
+            ApplyButtonRotation();
+        }
+
         UpdateMeshSprings();
         UpdateFire();
         UpdateBuildUpLoop();
 
         if (stateTimer <= stateTimerMax)
             stateTimer += Time.deltaTime;
+    }
+
+    private void LateUpdate()
+    {
+        // PhysGrabObject.EnableRigidbody is a delayed vanilla coroutine. Reassert
+        // staging after Update/coroutine work so it cannot enable replacement physics
+        // immediately before the next physics step while the compartment is rolling.
+        MaintainPreparedReplacementStaging();
     }
     
 }

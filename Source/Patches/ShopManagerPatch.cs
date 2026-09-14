@@ -27,6 +27,9 @@ internal static class ShopManagerPatch
             return;
         }
 
+        if (SemiFunc.IsMultiplayer())
+            ShopTableStabilizationCallbacks.BeginShopSession();
+
         bool isHostOrSingleplayer = SemiFunc.IsMasterClientOrSingleplayer();
 
         if (isHostOrSingleplayer)
@@ -86,7 +89,9 @@ internal static class ShopManagerPatch
         if (!Plugin.EnableMod.Value || !SemiFunc.IsMasterClientOrSingleplayer())
             return;
 
-        ShopItemLimitPlanner.ApplyConfiguredItemLimits();
+        RunCustomizationStep(
+            "ShopItemLimitPlanner.GetAllItemsPrefix",
+            ShopItemLimitPlanner.ApplyConfiguredItemLimits);
     }
 
 
@@ -98,8 +103,12 @@ internal static class ShopManagerPatch
         if (!Plugin.EnableMod.Value || !SemiFunc.IsMasterClientOrSingleplayer())
             return;
 
-        ShopPoolPlanner.PreparePools(__instance);
-        ShopBudgetPlanner.ApplyConfiguredBudgets(__instance);
+        RunCustomizationStep(
+            "ShopPoolPlanner.GetAllItemsPostfix",
+            () => ShopPoolPlanner.PreparePools(__instance));
+        RunCustomizationStep(
+            "ShopBudgetPlanner.GetAllItemsPostfix",
+            () => ShopBudgetPlanner.ApplyConfiguredBudgets(__instance));
     }
 
 }

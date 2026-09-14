@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
-    <!-- Adjust these paths to match your setup -->
-    <GameManagedPath>..\GameAssets\Managed</GameManagedPath>
+    <!-- Override either property from the command line when using another local game/reference layout. -->
+    <GameManagedPath Condition="'$(GameManagedPath)' == ''">$(MSBuildThisFileDirectory)..\..\GameAssets\Managed</GameManagedPath>
+    <BepInExCorePath Condition="'$(BepInExCorePath)' == ''">$(MSBuildThisFileDirectory)..\..\GameAssets\BepInEx\core</BepInExCorePath>
   </PropertyGroup>
 </Project>

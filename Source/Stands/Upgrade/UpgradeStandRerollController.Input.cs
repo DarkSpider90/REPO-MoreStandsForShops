@@ -70,6 +70,9 @@ internal sealed partial class UpgradeStandRerollController
         if (camera == null)
             return false;
 
+        if (!CanPossiblyReachButton(camera.position))
+            return false;
+
         Ray ray = new(camera.position, camera.forward);
 
         if (Physics.Raycast(ray, out RaycastHit hit, ButtonUseDistance, ~0, QueryTriggerInteraction.Collide) &&
@@ -97,6 +100,29 @@ internal sealed partial class UpgradeStandRerollController
         }
 
         return false;
+    }
+
+    private bool CanPossiblyReachButton(Vector3 cameraPosition)
+    {
+        if (buttonTargetColliders == null || buttonTargetColliders.Length == 0)
+            return true;
+
+        float maxDistance = ButtonUseDistance + ButtonCastRadius;
+        float maxSqrDistance = maxDistance * maxDistance;
+        bool foundEnabledCollider = false;
+
+        foreach (Collider collider in buttonTargetColliders)
+        {
+            if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy)
+                continue;
+
+            foundEnabledCollider = true;
+            if (collider.bounds.SqrDistance(cameraPosition) <= maxSqrDistance)
+                return true;
+        }
+
+        // Preserve fallback interaction for unusual third-party collider lifecycles.
+        return !foundEnabledCollider;
     }
 
     private bool IsButtonTarget(Transform hitTransform)

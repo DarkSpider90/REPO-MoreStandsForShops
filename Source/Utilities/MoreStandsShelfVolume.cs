@@ -6,7 +6,8 @@ public enum MoreStandsShelfZone
 {
     Drone,
     Crystal,
-    Grenade
+    Grenade,
+    Health
 }
 
 public sealed class MoreStandsShelfVolume : MonoBehaviour

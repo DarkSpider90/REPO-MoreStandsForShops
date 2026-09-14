@@ -25,25 +25,9 @@ internal static class ShopItemLimitPlanner
             _spawnChanceConfigsEnsured = true;
         }
 
-        foreach (var item in itemDict.Values)
-        {
-            if (item == null)
-                continue;
-
-            if (!ShopStockCatalog.TryGetConfigKeys(item, out string countKey, out _))
-                continue;
-
-            if (!Plugin.ItemCounts.TryGetValue(countKey, out var countEntry))
-                continue;
-
-            int newMax = countEntry.Value;
-            item.maxAmountInShop = newMax;
-
-            if (Plugin.DebugLogs.Value)
-                Plugin.Log.LogInfo($"[ShopItemLimitPlanner] Set {item.itemName} maxAmountInShop to {newMax}");
-        }
-
         if (Plugin.DebugLogs.Value)
-            Plugin.Log.LogInfo("[ShopItemLimitPlanner] Applied item count overrides.");
+            Plugin.Log.LogInfo(
+                "[ShopItemLimitPlanner] Registered per-item settings without changing vanilla item assets; " +
+                "configured current-shop counts are applied while rebuilding pools.");
     }
 }

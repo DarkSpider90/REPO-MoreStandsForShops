@@ -9,11 +9,15 @@ internal static class ShelfItemSelector
 {
     private static readonly Dictionary<MoreStandsShelfZone, int> SpawnedByZone = new();
     private static readonly Dictionary<string, int> SpawnedByItem = new();
+    private static readonly Dictionary<MoreStandsShelfZone, List<Item>> CandidatesByZone = new();
+    private static bool _candidateCacheBuilt;
 
     internal static void Reset()
     {
         SpawnedByZone.Clear();
         SpawnedByItem.Clear();
+        CandidatesByZone.Clear();
+        _candidateCacheBuilt = false;
     }
 
     internal static Item Select(MoreStandsShelfZone zone, SemiFunc.itemVolume slotVolume)
@@ -21,18 +25,64 @@ internal static class ShelfItemSelector
         if (StatsManager.instance == null || SpawnedCount(zone) >= TargetFor(zone))
             return null;
 
-        return StatsManager.instance.itemDictionary.Values
+        EnsureCandidateCache();
+
+        if (!CandidatesByZone.TryGetValue(zone, out List<Item> zoneCandidates))
+            return null;
+
+        List<Item> candidates = zoneCandidates
+            .Where(item => item.itemVolume == slotVolume)
+            .Where(item => CanSpawnItem(zone, item))
+            .Where(item => SameItemCount(zone, item) < SameCopyLimit(zone))
+            .ToList();
+
+        return candidates.OrderBy(WeightedRandomSortKey).FirstOrDefault();
+    }
+
+    private static void EnsureCandidateCache()
+    {
+        if (_candidateCacheBuilt || StatsManager.instance == null)
+            return;
+
+        _candidateCacheBuilt = true;
+
+        IEnumerable<Item> uniqueItems = StatsManager.instance.itemDictionary.Values
             .Where(item => item != null && !item.disabled)
             .GroupBy(ItemIdentity, StringComparer.Ordinal)
             .Select(group => group.First())
-            .Where(item => IsZoneItem(item, zone))
-            .Where(item => !IsBlockedShelfItem(item, zone))
-            .Where(item => item.itemVolume == slotVolume)
-            .Where(item => Plugin.GetItemSpawnChance(item) > 0)
-            .Where(item => CanSpawnItem(zone, item))
-            .Where(item => SameItemCount(zone, item) < SameCopyLimit(zone))
-            .OrderBy(WeightedRandomSortKey)
-            .FirstOrDefault();
+            .Where(item => Plugin.GetItemSpawnChance(item) > 0);
+
+        foreach (Item item in uniqueItems)
+        {
+            foreach (MoreStandsShelfZone zone in new[]
+                     {
+                         MoreStandsShelfZone.Drone,
+                         MoreStandsShelfZone.Crystal,
+                         MoreStandsShelfZone.Grenade,
+                         MoreStandsShelfZone.Health
+                     })
+            {
+                if (!IsZoneItem(item, zone) || IsBlockedShelfItem(item, zone))
+                    continue;
+
+                if (!CandidatesByZone.TryGetValue(zone, out List<Item> items))
+                {
+                    items = new List<Item>();
+                    CandidatesByZone.Add(zone, items);
+                }
+
+                items.Add(item);
+                break;
+            }
+        }
+
+        if (Plugin.DebugLogs.Value)
+        {
+            string counts = string.Join(", ", CandidatesByZone
+                .OrderBy(pair => (int)pair.Key)
+                .Select(pair => $"{pair.Key}={pair.Value.Count}"));
+            Plugin.Log.LogInfo($"[ShelfItemSelector] Candidate cache built once for shop: {counts}.");
+        }
     }
 
     internal static void RecordSpawn(MoreStandsShelfZone zone, Item item)
@@ -50,6 +100,7 @@ internal static class ShelfItemSelector
             MoreStandsShelfZone.Drone => "Drones",
             MoreStandsShelfZone.Crystal => "Power Crystals",
             MoreStandsShelfZone.Grenade => "Grenades",
+            MoreStandsShelfZone.Health => "Health Packs",
             _ => string.Empty
         };
 
@@ -86,6 +137,7 @@ internal static class ShelfItemSelector
             MoreStandsShelfZone.Drone => category == ShopStockCategory.Drones,
             MoreStandsShelfZone.Crystal => category == ShopStockCategory.PowerCrystals,
             MoreStandsShelfZone.Grenade => category == ShopStockCategory.Grenades,
+            MoreStandsShelfZone.Health => category == ShopStockCategory.HealthPacks,
             _ => false
         };
     }
@@ -116,6 +168,7 @@ internal static class ShelfItemSelector
         {
             MoreStandsShelfZone.Drone => "Drones",
             MoreStandsShelfZone.Grenade => "Grenades",
+            MoreStandsShelfZone.Health => "Health Packs",
             _ => string.Empty
         };
 
@@ -136,11 +189,6 @@ internal static class ShelfItemSelector
         if (item.minPlayerCount > players)
             return false;
 
-        int purchased = SemiFunc.StatGetItemsPurchased(item.name);
-        int selected = SameItemCount(zone, item);
-        if (item.maxAmountInShop > 0 && purchased + selected >= item.maxAmountInShop)
-            return false;
-
         return !item.maxPurchase ||
                StatsManager.instance.GetItemsUpgradesPurchasedTotal(item.name) < item.maxPurchaseAmount;
     }
@@ -155,6 +203,8 @@ internal static class ShelfItemSelector
         if (item == null)
             return string.Empty;
 
-        return string.IsNullOrWhiteSpace(item.name) ? ItemName(item) : item.name;
+        string internalName = string.IsNullOrWhiteSpace(item.name) ? ItemName(item) : item.name;
+        string resourcePath = item.prefab?.ResourcePath ?? string.Empty;
+        return internalName + "|" + resourcePath;
     }
 }

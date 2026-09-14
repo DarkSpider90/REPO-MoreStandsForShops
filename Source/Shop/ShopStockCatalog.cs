@@ -14,7 +14,6 @@ internal static class ShopStockCatalog
     internal static IReadOnlyList<string> StandardBudgetCountKeys { get; } = new[]
     {
         "Orbs",
-        "Grenades",
         "Mines",
         "Melee",
         "Guns",
@@ -24,6 +23,17 @@ internal static class ShopStockCatalog
         "Carts",
         "Pocket Carts",
         "Vehicles"
+    };
+
+    internal static IReadOnlyList<string> TableBudgetCountKeys { get; } = new[]
+    {
+        "Orbs",
+        "Mines",
+        "Melee",
+        "Guns",
+        "C.A.R.T. Weapons",
+        "Launchers",
+        "Tools"
     };
 
     internal static ShopStockCategory GetCategory(Item item)

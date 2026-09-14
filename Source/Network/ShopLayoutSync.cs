@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using ExitGames.Client.Photon;
 using Photon.Pun;
 using UnityEngine;
@@ -16,6 +18,9 @@ internal static class ShopLayoutSync
     private const string UpgradeRerollCountKey = "MSFS.Upgrade.RerollCount";
     private const string UpgradeMaxRerollCountKey = "MSFS.Upgrade.MaxRerollCount";
     private const string UpgradeRerollBrokenKey = "MSFS.Upgrade.RerollBroken";
+    private const string UpgradeRerollTransactionPendingKey = "MSFS.Upgrade.RerollTransaction.Pending";
+    private const string UpgradeRerollTransactionIdKey = "MSFS.Upgrade.RerollTransaction.Id";
+    private const string UpgradeRerollTransactionPlanKey = "MSFS.Upgrade.RerollTransaction.Plan";
 
     private const string ShelfActiveKey = "MSFS.Shelf.Active";
     private const string ShelfDroneSlotCountKey = "MSFS.Shelf.DroneSlotCount";
@@ -25,6 +30,7 @@ internal static class ShopLayoutSync
     private const string LayoutReadyKey = "MSFS.Layout.Ready";
     private const string LayoutSequenceKey = "MSFS.Layout.Sequence";
     private const string UpgradeSlotCountKey = "MSFS.Upgrade.SlotCount";
+    private const string TableStabilizedViewIdsKey = "MSFS.Table.StabilizedViewIds";
 
     internal static void Clear()
     {
@@ -43,11 +49,16 @@ internal static class ShopLayoutSync
             { UpgradeRerollCountKey, 0 },
             { UpgradeMaxRerollCountKey, -1 },
             { UpgradeRerollBrokenKey, false },
+            { UpgradeRerollTransactionPendingKey, false },
+            { UpgradeRerollTransactionIdKey, 0 },
+            { UpgradeRerollTransactionPlanKey, string.Empty },
 
             { ShelfActiveKey, false },
             { ShelfDroneSlotCountKey, 0 },
             { ShelfCrystalSlotCountKey, 0 },
             { ShelfDisabledKey, string.Empty },
+
+            { TableStabilizedViewIdsKey, string.Empty },
 
             { LayoutReadyKey, false },
             { LayoutSequenceKey, NextSequence() },
@@ -78,10 +89,10 @@ internal static class ShopLayoutSync
     }
 
 
-    internal static void SetUpgradeStand(UpgradeStandLayout layout)
+    internal static bool SetUpgradeStand(UpgradeStandLayout layout)
     {
         if (!CanWrite() || layout == null)
-            return;
+            return false;
 
         var props = new Hashtable
         {
@@ -97,9 +108,11 @@ internal static class ShopLayoutSync
             { UpgradeRerollBrokenKey, layout.RerollBroken }
         };
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        if (!PhotonNetwork.CurrentRoom.SetCustomProperties(props))
+            return false;
         
         Plugin.Log.LogInfo($"[ShopLayoutSync] Stored upgrade stand layout: enabled={layout.Enabled}, variant={layout.VariantId}, slots={layout.UpgradeSlotCount}, disabledPaths={layout.DisabledPaths?.Length ?? 0}.");
+        return true;
     }
 
 
@@ -178,10 +191,90 @@ internal static class ShopLayoutSync
     }
 
 
-    internal static void SetDroneCrystalShelf(DroneCrystalShelfLayout layout)
+    internal static int BeginUpgradeRerollTransaction(string encodedPlan)
+    {
+        if (!CanWrite() || string.IsNullOrWhiteSpace(encodedPlan))
+            return 0;
+
+        Hashtable current = PhotonNetwork.CurrentRoom.CustomProperties;
+        int transactionId = ReadInt(current, UpgradeRerollTransactionIdKey) + 1;
+        if (transactionId <= 0)
+            transactionId = 1;
+
+        var props = new Hashtable
+        {
+            { UpgradeRerollTransactionPendingKey, true },
+            { UpgradeRerollTransactionIdKey, transactionId },
+            { UpgradeRerollTransactionPlanKey, encodedPlan }
+        };
+
+        if (!PhotonNetwork.CurrentRoom.SetCustomProperties(props))
+        {
+            Plugin.Log.LogError($"[ShopLayoutSync] Failed to queue pending upgrade reroll transaction {transactionId}.");
+            return 0;
+        }
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[ShopLayoutSync] Stored pending upgrade reroll transaction: id={transactionId}, bytes={encodedPlan.Length}.");
+
+        return transactionId;
+    }
+
+
+    internal static bool TryGetUpgradeRerollTransaction(out int transactionId, out string encodedPlan)
+    {
+        transactionId = 0;
+        encodedPlan = string.Empty;
+
+        if (!CanRead())
+            return false;
+
+        Hashtable props = PhotonNetwork.CurrentRoom.CustomProperties;
+        if (!ReadBool(props, UpgradeRerollTransactionPendingKey))
+            return false;
+
+        transactionId = ReadInt(props, UpgradeRerollTransactionIdKey);
+        encodedPlan = ReadString(props, UpgradeRerollTransactionPlanKey);
+        return transactionId > 0 && !string.IsNullOrWhiteSpace(encodedPlan);
+    }
+
+
+    internal static void CompleteUpgradeRerollTransaction(int transactionId)
+    {
+        if (!CanWrite())
+            return;
+
+        if (transactionId <= 0)
+            transactionId = ReadInt(
+                PhotonNetwork.CurrentRoom.CustomProperties,
+                UpgradeRerollTransactionIdKey);
+
+        if (transactionId <= 0)
+            return;
+
+        var props = new Hashtable
+        {
+            { UpgradeRerollTransactionPendingKey, false },
+            { UpgradeRerollTransactionPlanKey, string.Empty }
+        };
+
+        var expected = new Hashtable
+        {
+            { UpgradeRerollTransactionPendingKey, true },
+            { UpgradeRerollTransactionIdKey, transactionId }
+        };
+
+        PhotonNetwork.CurrentRoom.SetCustomProperties(props, expected);
+
+        if (Plugin.DebugLogs.Value)
+            Plugin.Log.LogInfo($"[ShopLayoutSync] Completed upgrade reroll transaction: id={transactionId}.");
+    }
+
+
+    internal static bool SetDroneCrystalShelf(DroneCrystalShelfLayout layout)
     {
         if (!CanWrite() || layout == null)
-            return;
+            return false;
 
         var props = new Hashtable
         {
@@ -191,9 +284,11 @@ internal static class ShopLayoutSync
             { ShelfDisabledKey, JoinPaths(layout.DisabledPaths) }
         };
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        if (!PhotonNetwork.CurrentRoom.SetCustomProperties(props))
+            return false;
         
         Plugin.Log.LogInfo($"[ShopLayoutSync] Stored drone/crystal shelf layout: enabled={layout.Enabled}, droneSlots={layout.DroneSlotCount}, crystalSlots={layout.CrystalSlotCount}, disabledPaths={layout.DisabledPaths?.Length ?? 0}.");
+        return true;
     }
 
 
@@ -236,6 +331,56 @@ internal static class ShopLayoutSync
             return 0;
 
         return ReadInt(PhotonNetwork.CurrentRoom.CustomProperties, LayoutSequenceKey);
+    }
+
+
+    internal static bool SetTableStabilizedViewIds(IEnumerable<int> viewIds)
+    {
+        if (!CanWrite())
+            return false;
+
+        string encoded = string.Join(",", (viewIds ?? Array.Empty<int>())
+            .Where(viewId => viewId > 0)
+            .Distinct()
+            .OrderBy(viewId => viewId));
+
+        return PhotonNetwork.CurrentRoom.SetCustomProperties(new Hashtable
+        {
+            { TableStabilizedViewIdsKey, encoded }
+        });
+    }
+
+
+    internal static int[] GetTableStabilizedViewIds()
+    {
+        if (!CanRead())
+            return Array.Empty<int>();
+
+        string encoded = ReadString(
+            PhotonNetwork.CurrentRoom.CustomProperties,
+            TableStabilizedViewIdsKey);
+        if (string.IsNullOrWhiteSpace(encoded))
+            return Array.Empty<int>();
+
+        var result = new List<int>();
+        foreach (string part in encoded.Split(','))
+        {
+            if (int.TryParse(part, out int viewId) && viewId > 0 && !result.Contains(viewId))
+                result.Add(viewId);
+        }
+
+        return result.ToArray();
+    }
+
+
+    internal static bool HasTableStabilizedViewIds()
+    {
+        if (!CanRead())
+            return false;
+
+        return !string.IsNullOrWhiteSpace(ReadString(
+            PhotonNetwork.CurrentRoom.CustomProperties,
+            TableStabilizedViewIdsKey));
     }
 
 
